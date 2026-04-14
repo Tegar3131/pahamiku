@@ -55,70 +55,266 @@ $grid_cols = explode('x', $grid_raw)[0];
     <title><?= htmlspecialchars($papan['nama_papan']) ?> — PAHAMIKU</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&display=swap" rel="stylesheet">
-    <style>
-        body { background: #fafafa; font-family: 'Baloo 2', cursive; margin: 0; padding: 0; }
-        
+    <style> 
+    /* ===== RESET & BODY ===== */
+    body {
+        margin: 0;
+        padding: 0;
+        background-color: #F0FDF9;
+        font-family: 'Baloo 2', cursive;
+        user-select: none;
+        padding-bottom: 90px;
+    }
+
+    /* ===== GRID PAPAN KOMUNIKASI ===== */
+    .papan-komunikasi {
+        display: grid;
+        grid-template-columns: repeat(<?= $grid_cols ?>, 1fr);
+        gap: 16px;
+        padding: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    @media (max-width: 768px) {
         .papan-komunikasi {
-            display: grid;
-            grid-template-columns: repeat(<?= $grid_cols ?>, 1fr);
             gap: 12px;
-            padding: 15px;
-            height: 90vh;
-            overflow-y: auto;
-            align-content: start;
+            padding: 12px;
         }
+    }
 
-        .kartu-suara {
-            background: white;
-            border: 4px solid #eee;
-            border-radius: 20px;
-            aspect-ratio: 1; 
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 10px;
-            cursor: pointer;
-            transition: all 0.1s;
-            box-shadow: 0 4px 0 #ddd;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
+    /* ===== KARTU SUARA / SIMBOL ===== */
+    .kartu-suara {
+        background: #FFFFFF;
+        border: 4px solid #D1D5DB;
+        border-radius: 20px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        cursor: pointer;
+        box-shadow: 0 6px 0 #D1D5DB;
+        transition: transform 0.08s ease, box-shadow 0.08s ease, border-color 0.08s ease;
+        aspect-ratio: 1 / 1;
+        color: #1A1A2E;
+    }
 
-        .kartu-suara:active { transform: translateY(4px); box-shadow: 0 0 0 #ddd; border-color: #4ECDC4; }
-        .kartu-suara img { max-width: 80%; max-height: 60%; object-fit: contain; margin-bottom: 8px; border-radius: 10px; }
-        .kartu-suara span { font-size: 1.1rem; font-weight: 800; color: #333; text-align: center; line-height: 1.1; }
+    .kartu-suara:active {
+        transform: translateY(6px);
+        box-shadow: 0 0 0 transparent;
+        border-color: #4ECDC4;
+    }
 
-        /* Navigasi Bawah */
-        .nav-bawah {
-            height: 10vh;
-            background: white;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 20px;
-            border-top: 2px solid #eee;
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-            z-index: 100;
-        }
-        
-        .btn-kembali { background: #FF6B6B; color: white; border-radius: 50px; padding: 8px 20px; text-decoration: none; font-weight: 800; }
-        
-        /* Tombol Pilih Papan */
-        .btn-pilih-papan {
-            background: #4ECDC4;
-            color: white;
-            border: none;
-            border-radius: 50px;
-            padding: 8px 20px;
-            font-weight: 800;
-            font-size: 1rem;
-            box-shadow: 0 4px 0 #3b9b94;
-            transition: transform 0.1s;
-        }
-        .btn-pilih-papan:active { transform: translateY(4px); box-shadow: 0 0 0 #3b9b94; }
+    .kartu-suara img {
+        max-width: 70%;
+        max-height: 55%;
+        object-fit: contain;
+        margin-bottom: 10px;
+        pointer-events: none;
+    }
+
+    .kartu-suara span {
+        font-weight: 800;
+        font-size: clamp(1rem, 3vw, 1.4rem);
+        line-height: 1.2;
+        word-break: break-word;
+        pointer-events: none;
+    }
+
+     /* ===== NAVIGASI BAWAH ABK ===== */
+.nav-bawah {
+    height: 80px;
+    background: #FFFDF7;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    border-top: 4px solid #E5E7EB;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    z-index: 100;
+    gap: 12px;
+}
+
+/* Tombol generik bergaya 3D */
+.btn-nav {
+    border: none;
+    border-radius: 22px;
+    padding: 14px 22px;
+    font-weight: 800;
+    font-size: 1.1rem;
+    font-family: 'Baloo 2', cursive;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 56px;
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+    text-decoration: none;
+    white-space: nowrap;
+}
+.btn-nav:active {
+    transform: translateY(5px);
+    box-shadow: 0 0 0 transparent !important;
+}
+
+.btn-keluar {
+    background: #FF6B6B;
+    color: white;
+    box-shadow: 0 5px 0 #C0392B;
+    min-width: 130px;
+    justify-content: center;
+}
+
+.btn-pilih-papan {
+    background: #FFD93D;
+    color: #1A1A2E;
+    box-shadow: 0 5px 0 #C9A300;
+    flex: 1;
+    justify-content: center;
+}
+
+.btn-nav .ikon-btn { font-size: 1.5rem; line-height: 1; }
+
+/* ===== MODAL PILIH PAPAN (Bottom Sheet) ===== */
+.modal-abk .modal-dialog {
+    margin: 0;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-width: 100%;
+    width: 100%;
+}
+
+.modal-abk .modal-content {
+    border-radius: 32px 32px 0 0;
+    border: 4px solid #4ECDC4;
+    border-bottom: none;
+    background: #F0FDF9;
+    max-height: 88vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-abk .modal-header {
+    border-bottom: 3px dashed #4ECDC4;
+    padding: 20px 20px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    background: #F0FDF9;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+}
+
+.modal-abk .modal-title {
+    font-size: 1.5rem;
+    color: #0F5E56;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.modal-abk .modal-title .ikon-judul { font-size: 1.8rem; }
+
+.modal-abk .btn-close-custom {
+    background: #FF6B6B;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 52px;
+    height: 52px;
+    font-size: 1.6rem;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 0 #C0392B;
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+    flex-shrink: 0;
+    line-height: 1;
+}
+.modal-abk .btn-close-custom:active {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 #C0392B;
+}
+
+.modal-abk .modal-body {
+    overflow-y: auto;
+    padding: 18px;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Grid kartu papan */
+.grid-pilihan-papan {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+}
+
+.kartu-papan-abk {
+    background: white;
+    border: 4px solid #D1D5DB;
+    border-radius: 24px;
+    padding: 20px 14px 16px;
+    text-align: center;
+    text-decoration: none;
+    color: #1A1A2E;
+    font-weight: 800;
+    font-size: 1.1rem;
+    font-family: 'Baloo 2', cursive;
+    box-shadow: 0 6px 0 #D1D5DB;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    line-height: 1.2;
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+    min-height: 120px;
+    justify-content: center;
+}
+.kartu-papan-abk:hover { color: #1A1A2E; text-decoration: none; }
+.kartu-papan-abk:active {
+    transform: translateY(6px);
+    box-shadow: 0 0 0 #D1D5DB;
+    border-color: #4ECDC4;
+}
+.kartu-papan-abk.aktif {
+    background: #4ECDC4;
+    color: white;
+    border-color: #2A9E96;
+    box-shadow: 0 6px 0 #1E7D76;
+}
+.kartu-papan-abk.aktif:active {
+    box-shadow: 0 0 0 #1E7D76;
+}
+
+.kartu-papan-abk .ikon-papan { font-size: 2.8rem; line-height: 1; }
+
+.badge-aktif {
+    background: rgba(255,255,255,0.9);
+    color: #0F5E56;
+    font-size: 0.72rem;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-weight: 800;
+}
+.kartu-papan-abk.aktif .badge-aktif {
+    background: rgba(255,255,255,0.25);
+    color: white;
+}
+
+/* Responsif untuk HP kecil: 1 kolom */
+@media (max-width: 400px) {
+    .grid-pilihan-papan { grid-template-columns: 1fr; }
+}
     </style>
 </head>
 <body>
@@ -148,32 +344,66 @@ $grid_cols = explode('x', $grid_raw)[0];
 </div>
 
 <div class="nav-bawah">
-    <a href="../logout.php?jenis=abk" class="btn-kembali">🔙 Keluar</a>
+    <a href="../logout.php?jenis=abk" class="btn-nav btn-keluar">
+        <span class="ikon-btn">👋</span> Keluar
+    </a>
     
-    <button class="btn-pilih-papan" data-bs-toggle="modal" data-bs-target="#modalPilihPapan">
-        📂 Papan: <?= htmlspecialchars($papan['nama_papan']) ?>
+    <button class="btn-nav btn-pilih-papan" 
+            data-bs-toggle="modal" 
+            data-bs-target="#modalPilihPapan" 
+            aria-label="Ganti papan komunikasi">
+        <span class="ikon-btn">📂</span> Ganti Papan Komunikasi
     </button>
 </div>
 
-<div class="modal fade" id="modalPilihPapan" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content" style="border-radius: 24px; border: none;">
-            <div class="modal-header border-0 pb-0">
-                <h4 class="modal-title fw-bold" style="font-family: 'Baloo 2', cursive;">Pilih Papan Lain</h4>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<div class="modal fade modal-abk" 
+     id="modalPilihPapan" 
+     tabindex="-1" 
+     aria-labelledby="judulModalPapan"
+     aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title fw-bold" 
+                    id="judulModalPapan"
+                    style="font-family: 'Baloo 2', cursive;">
+                    <span class="ikon-judul">🗣️</span> Mau bicara apa?
+                </h3>
+                <button type="button" 
+                        class="btn-close-custom" 
+                        data-bs-dismiss="modal" 
+                        aria-label="Tutup">
+                    ✕
+                </button>
             </div>
-            <div class="modal-body p-4">
-                <div class="d-grid gap-3">
-                    <?php foreach($semua_papan as $p): ?>
+            <div class="modal-body">
+                <div class="grid-pilihan-papan">
+                    <?php foreach($semua_papan as $p): 
+                        $is_active = ($p['id'] == $papan_id);
+                        $nama_lower = strtolower($p['nama_papan']);
+                        
+                        // Tentukan ikon berdasarkan nama papan
+                        $ikon = '📋';
+                        if ($p['is_favorit'])                              $ikon = '⭐';
+                        elseif (strpos($nama_lower, 'makan') !== false)    $ikon = '🍽️';
+                        elseif (strpos($nama_lower, 'minum') !== false)    $ikon = '🥤';
+                        elseif (strpos($nama_lower, 'sekolah') !== false)  $ikon = '🏫';
+                        elseif (strpos($nama_lower, 'perasaan') !== false) $ikon = '😊';
+                        elseif (strpos($nama_lower, 'darurat') !== false)  $ikon = '🚨';
+                        elseif (strpos($nama_lower, 'perpustakaan') !== false) $ikon = '📚';
+                        elseif (strpos($nama_lower, 'bermain') !== false)  $ikon = '🎮';
+                        elseif (strpos($nama_lower, 'toilet') !== false)   $ikon = '🚽';
+                        elseif (strpos($nama_lower, 'rumah') !== false)    $ikon = '🏠';
+                        elseif (strpos($nama_lower, 'tidur') !== false)    $ikon = '😴';
+                        elseif (strpos($nama_lower, 'sakit') !== false)    $ikon = '🤒';
+                    ?>
                         <a href="index.php?papan_id=<?= $p['id'] ?>" 
-                           class="btn btn-lg fw-bold py-3 text-start" 
-                           style="border-radius: 16px; font-family: 'Baloo 2', cursive; <?= $p['id'] == $papan_id ? 'background: #4ECDC4; color: white;' : 'background: #f8fafc; color: #333; border: 2px solid #e2e8f0;' ?>">
-                            
-                            <?= $p['is_favorit'] ? '⭐ ' : '📂 ' ?>
-                            <?= htmlspecialchars($p['nama_papan']) ?>
-                            
-                            <?php if($p['id'] == $papan_id): ?>
-                                <span class="badge bg-white text-dark float-end mt-1">Aktif</span>
+                           class="kartu-papan-abk <?= $is_active ? 'aktif' : '' ?>"
+                           aria-label="<?= htmlspecialchars($p['nama_papan']) ?><?= $is_active ? ', sedang dipakai' : '' ?>">
+                            <span class="ikon-papan" aria-hidden="true"><?= $ikon ?></span>
+                            <span><?= htmlspecialchars($p['nama_papan']) ?></span>
+                            <?php if($is_active): ?>
+                                <span class="badge-aktif">✔ Sedang Dipakai</span>
                             <?php endif; ?>
                         </a>
                     <?php endforeach; ?>
@@ -182,7 +412,6 @@ $grid_cols = explode('x', $grid_raw)[0];
         </div>
     </div>
 </div>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>

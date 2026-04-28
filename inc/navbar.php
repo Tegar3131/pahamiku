@@ -75,6 +75,13 @@ if ($is_logged_in && function_exists('getUserLogin')) {
     .global-navbar { padding: 0 16px; }
     .global-navbar-name { display: none; }
 }
+@media (max-width: 480px) {
+    .global-navbar { height: auto; min-height: 60px; padding: 10px 12px; }
+    .global-navbar-right { flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+    .global-navbar-brand { font-size: 20px; }
+    .global-navbar-text-link { font-size: 13px; margin-right: 0 !important; }
+    .global-navbar-btn { padding: 6px 12px; font-size: 12px; }
+}
 </style>
 
 <div class="global-navbar">

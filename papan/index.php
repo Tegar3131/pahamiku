@@ -2,11 +2,26 @@
 if (session_status() === PHP_SESSION_NONE) session_start();
 include '../inc/config.php';
 
-// Cek apakah login sebagai ABK
 $profil_id = $_SESSION['profil_id'] ?? 0;
 $papan_id  = (int)($_GET['papan_id'] ?? 0);
+$preset    = $_GET['preset'] ?? ''; // Ambil parameter preset
 
-// Jika tidak ada papan_id, cari papan favorit milik profil ini
+// LOGIKA BARU: Jika ada parameter 'preset', cari ID papan globalnya
+if ($preset) {
+    $nama_preset = '';
+    if ($preset == 'dasar') $nama_preset = 'Kebutuhan Dasar';
+    if ($preset == 'perpustakaan') $nama_preset = 'Di Perpustakaan';
+    if ($preset == 'perasaan') $nama_preset = 'Perasaanku';
+    if ($preset == 'darurat') $nama_preset = 'Darurat';
+
+    $stmt_pre = $conn->prepare("SELECT id FROM papan WHERE nama_papan = ? AND profil_id IS NULL LIMIT 1");
+    $stmt_pre->bind_param('s', $nama_preset);
+    $stmt_pre->execute();
+    $res_pre = $stmt_pre->get_result()->fetch_assoc();
+    if ($res_pre) $papan_id = $res_pre['id'];
+}
+
+// Jika masih tidak ada papan_id dan user sudah login, cari favorit mereka
 if (!$papan_id && $profil_id) {
     $stmt = $conn->prepare("SELECT id FROM papan WHERE profil_id = ? ORDER BY is_favorit DESC, created_at DESC LIMIT 1");
     $stmt->bind_param('i', $profil_id);
@@ -36,10 +51,16 @@ $stmt_s->execute();
 $simbols = $stmt_s->get_result()->fetch_all(MYSQLI_ASSOC);
 
 // ==========================================
-// FITUR BARU: Ambil semua papan milik ABK ini
+// Ambil semua papan: milik ABK ini + papan global (preset)
 // ==========================================
-$stmt_all = $conn->prepare("SELECT id, nama_papan, is_favorit FROM papan WHERE profil_id = ? ORDER BY is_favorit DESC, nama_papan ASC");
-$stmt_all->bind_param('i', $profil_id);
+if ($profil_id) {
+    // User login: tampilkan papan milik mereka + papan global
+    $stmt_all = $conn->prepare("SELECT id, nama_papan, is_favorit, ikon_papan FROM papan WHERE profil_id = ? OR profil_id IS NULL ORDER BY is_favorit DESC, nama_papan ASC");
+    $stmt_all->bind_param('i', $profil_id);
+} else {
+    // Guest/preset: hanya tampilkan papan global
+    $stmt_all = $conn->prepare("SELECT id, nama_papan, is_favorit, ikon_papan FROM papan WHERE profil_id IS NULL ORDER BY nama_papan ASC");
+}
 $stmt_all->execute();
 $semua_papan = $stmt_all->get_result()->fetch_all(MYSQLI_ASSOC);
 
@@ -159,6 +180,13 @@ $grid_cols = explode('x', $grid_raw)[0];
 .btn-nav:active {
     transform: translateY(5px);
     box-shadow: 0 0 0 transparent !important;
+}
+
+@media (max-width: 480px) {
+    .nav-bawah { padding: 0 12px; gap: 8px; }
+    .btn-nav { padding: 8px 12px; font-size: 0.95rem; min-height: 48px; white-space: normal; line-height: 1.2; }
+    .btn-keluar { min-width: 100px; }
+    .btn-nav .ikon-btn { font-size: 1.2rem; }
 }
 
 .btn-keluar {
@@ -344,9 +372,15 @@ $grid_cols = explode('x', $grid_raw)[0];
 </div>
 
 <div class="nav-bawah">
+    <?php if ($profil_id): ?>
     <a href="../logout.php?jenis=abk" class="btn-nav btn-keluar">
         <span class="ikon-btn">👋</span> Keluar
     </a>
+    <?php else: ?>
+    <a href="<?= BASE_URL ?>index.php" class="btn-nav btn-keluar" style="background:#4ECDC4; box-shadow:0 5px 0 #2A9E96;">
+        <span class="ikon-btn">🏠</span> Beranda
+    </a>
+    <?php endif; ?>
     
     <button class="btn-nav btn-pilih-papan" 
             data-bs-toggle="modal" 
@@ -380,22 +414,13 @@ $grid_cols = explode('x', $grid_raw)[0];
                 <div class="grid-pilihan-papan">
                     <?php foreach($semua_papan as $p): 
                         $is_active = ($p['id'] == $papan_id);
-                        $nama_lower = strtolower($p['nama_papan']);
                         
-                        // Tentukan ikon berdasarkan nama papan
-                        $ikon = '📋';
-                        if ($p['is_favorit'])                              $ikon = '⭐';
-                        elseif (strpos($nama_lower, 'makan') !== false)    $ikon = '🍽️';
-                        elseif (strpos($nama_lower, 'minum') !== false)    $ikon = '🥤';
-                        elseif (strpos($nama_lower, 'sekolah') !== false)  $ikon = '🏫';
-                        elseif (strpos($nama_lower, 'perasaan') !== false) $ikon = '😊';
-                        elseif (strpos($nama_lower, 'darurat') !== false)  $ikon = '🚨';
-                        elseif (strpos($nama_lower, 'perpustakaan') !== false) $ikon = '📚';
-                        elseif (strpos($nama_lower, 'bermain') !== false)  $ikon = '🎮';
-                        elseif (strpos($nama_lower, 'toilet') !== false)   $ikon = '🚽';
-                        elseif (strpos($nama_lower, 'rumah') !== false)    $ikon = '🏠';
-                        elseif (strpos($nama_lower, 'tidur') !== false)    $ikon = '😴';
-                        elseif (strpos($nama_lower, 'sakit') !== false)    $ikon = '🤒';
+                        // Jika favorit tampilkan bintang, jika tidak, panggil langsung dari database
+                        if ($p['is_favorit']) {
+                            $ikon = '⭐';
+                        } else {
+                            $ikon = !empty($p['ikon_papan']) ? $p['ikon_papan'] : '📋';
+                        }
                     ?>
                         <a href="index.php?papan_id=<?= $p['id'] ?>" 
                            class="kartu-papan-abk <?= $is_active ? 'aktif' : '' ?>"

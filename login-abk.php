@@ -172,10 +172,65 @@ $profil_pilih = (int) ($_GET['profil'] ?? $_POST['profil_id'] ?? 0);
             background: #FFFBEA;
             box-shadow: 0 0 0 4px rgba(255,217,61,0.3);
         }
+        .profil-foto-login {
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 0 auto 8px;
+            display: block;
+            border: 3px solid #E5E7EB;
+            cursor: zoom-in;
+            transition: all 0.2s;
+        }
+        .profil-foto-login:hover { transform: scale(1.1); border-color: var(--kuning-tua); }
+
+        /* ── Lightbox Popup ── */
+        .lightbox {
+            display: none; 
+            position: fixed; 
+            z-index: 9999; 
+            left: 0; 
+            top: 0; 
+            width: 100%; 
+            height: 100%; 
+            background-color: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .lightbox.tampil {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 1;
+        }
+        .lightbox img {
+            max-width: 90%;
+            max-height: 80vh;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            transform: scale(0.8);
+            transition: transform 0.3s ease;
+        }
+        .lightbox.tampil img { transform: scale(1); }
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: #fff;
+            font-size: 44px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+            transition: color 0.2s;
+        }
+        .lightbox-close:hover { color: var(--kuning-tua); }
         .kartu-profil .avatar {
             font-size: 44px;
             margin-bottom: 8px;
             display: block;
+            line-height: 1;
         }
         .kartu-profil .nama-profil {
             font-size: 16px;
@@ -380,7 +435,11 @@ $profil_pilih = (int) ($_GET['profil'] ?? $_POST['profil_id'] ?? 0);
                         ?>
                         <div class="kartu-profil <?= $aktif ?>"
                              onclick="pilihProfil(<?= $profil['id'] ?>, '<?= htmlspecialchars($profil['nama']) ?>')">
-                            <span class="avatar"><?= $avatar ?></span>
+                            <?php if (!empty($profil['foto_profil'])): ?>
+                                <img src="uploads/profil/<?= htmlspecialchars($profil['foto_profil']) ?>" alt="Foto Wajah" class="profil-foto-login" onclick="bukaLightbox(event, this.src)">
+                            <?php else: ?>
+                                <span class="avatar"><?= $avatar ?></span>
+                            <?php endif; ?>
                             <div class="nama-profil"><?= htmlspecialchars($profil['nama']) ?></div>
                             <?php if ($profil['jenis_abk']): ?>
                                 <div class="jenis"><?= htmlspecialchars($profil['jenis_abk']) ?></div>
@@ -502,6 +561,29 @@ function updateDots() {
         }
     }
 }
+
+// Fitur Buka Lightbox
+function bukaLightbox(e, srcUrl) {
+    if(e) e.stopPropagation(); // Mencegah form pin terbuka otomatis ketika mau nge-zoom gambar
+    
+    const lightbox = document.getElementById('lightbox-foto');
+    document.getElementById('lightbox-img').src = srcUrl;
+    lightbox.style.display = 'flex';
+    setTimeout(() => { lightbox.classList.add('tampil'); }, 10);
+}
+function tutupLightbox() {
+    const lightbox = document.getElementById('lightbox-foto');
+    lightbox.classList.remove('tampil');
+    setTimeout(() => { lightbox.style.display = 'none'; }, 300);
+}
+
 </script>
+
+<!-- ── Lightbox Container ── -->
+<div id="lightbox-foto" class="lightbox" onclick="tutupLightbox()">
+    <span class="lightbox-close">&times;</span>
+    <img id="lightbox-img" src="" alt="Perbesaran Foto" onclick="event.stopPropagation()">
+</div>
+
 </body>
 </html>

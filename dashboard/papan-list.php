@@ -131,6 +131,7 @@ $avatar = $avatar_map[$profil['jenis_abk']] ?? '😊';
         }
         .btn-edit { background: var(--kuning); color: var(--gelap); }
         .btn-hapus { background: #FEF2F2; color: var(--merah); }
+        .btn-cetak { background: #E0F2FE; color: #0284C7; }
         .btn-tambah {
             background: var(--gelap);
             color: white;
@@ -153,6 +154,18 @@ $avatar = $avatar_map[$profil['jenis_abk']] ?? '😊';
         @keyframes masuk {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 480px) {
+            .header-profil {
+                flex-direction: column;
+                text-align: center;
+                gap: 20px;
+                padding: 20px;
+            }
+            .profil-info { flex-direction: column; gap: 10px; }
+            .btn-tambah { width: 100%; padding: 12px; }
+            .grid-papan { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -187,7 +200,9 @@ $avatar = $avatar_map[$profil['jenis_abk']] ?? '😊';
                     <div class="papan-nama"><?= htmlspecialchars($p['nama_papan']) ?></div>
                     <div class="papan-grid-size">Ukuran Kotak: <?= $p['grid'] ?></div>
                     <div class="aksi-papan">
-                        <a href="papan-edit.php?id=<?= $p['id'] ?>" class="btn btn-edit">Atur Simbol</a>
+                        <a href="papan-cetak.php?id=<?= $p['id'] ?>" target="_blank" class="btn btn-cetak">Cetak</a>
+                        
+                        <a href="papan-edit.php?id=<?= $p['id'] ?>" class="btn btn-edit">Atur</a>
                         <a href="papan-hapus.php?id=<?= $p['id'] ?>" 
                            onclick="return confirm('Hapus papan ini?')" 
                            class="btn btn-hapus">Hapus</a>

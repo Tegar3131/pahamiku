@@ -219,7 +219,7 @@ if (isset($_SESSION['profil_id'])) {
         }
         .preset-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 12px;
         }
         .btn-preset {
@@ -267,9 +267,12 @@ if (isset($_SESSION['profil_id'])) {
         }
 
         /* ── Responsif HP kecil ── */
+        @media (max-width: 768px) {
+            .wrapper { justify-content: flex-start; padding-top: 60px; }
+        }
         @media (max-width: 480px) {
             .pilihan-grid { grid-template-columns: 1fr; }
-            .preset-grid  { grid-template-columns: repeat(3, 1fr); }
+            .preset-grid  { grid-template-columns: repeat(2, 1fr); }
         }
     </style>
 </head>
@@ -330,6 +333,10 @@ if (isset($_SESSION['profil_id'])) {
             <a href="<?= BASE_URL ?>papan/index.php?preset=perasaan" class="btn-preset">
                 <span class="e">😊</span>
                 Perasaan
+            </a>
+            <a href="<?= BASE_URL ?>papan/index.php?preset=darurat" class="btn-preset">
+                <span class="e">🚨</span>
+                Darurat
             </a>
         </div>
     </div>

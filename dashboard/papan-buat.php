@@ -18,9 +18,11 @@ if (!$profil) redirect('dashboard/index.php');
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nama_papan'])) {
     $nama_papan = bersihkan($_POST['nama_papan']);
     $grid       = $_POST['grid']; 
+    $ikon_papan = bersihkan($_POST['ikon_papan']); // Tambahkan baris ini
 
-    $stmt_ins = $conn->prepare("INSERT INTO papan (profil_id, nama_papan, grid) VALUES (?, ?, ?)");
-    $stmt_ins->bind_param('iss', $profil_id, $nama_papan, $grid);
+    // Ubah query INSERT untuk memasukkan ikon_papan
+    $stmt_ins = $conn->prepare("INSERT INTO papan (profil_id, nama_papan, ikon_papan, grid) VALUES (?, ?, ?, ?)");
+    $stmt_ins->bind_param('isss', $profil_id, $nama_papan, $ikon_papan, $grid);
     
     if ($stmt_ins->execute()) {
         $papan_id = $conn->insert_id;
@@ -28,7 +30,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nama_papan'])) {
         redirect("dashboard/papan-edit.php?id=$papan_id");
     }
 }
-
 // Avatar map untuk visual header
 $avatar_map = [
     'ASD' => '🧩', 'ADHD' => '⚡', 'Tunagrahita' => '🌟', 
@@ -156,6 +157,12 @@ $avatar = $avatar_map[$profil['jenis_abk']] ?? '😊';
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
+        @media (max-width: 480px) {
+            .card-body { padding: 24px; }
+            .card-header-custom { padding: 20px; }
+            h2 { font-size: 22px; }
+        }
     </style>
 </head>
 <body>
@@ -182,12 +189,27 @@ $avatar = $avatar_map[$profil['jenis_abk']] ?? '😊';
                 </div>
                 <div class="card-body">
                     <form method="POST">
-                        <div class="mb-4">
-                            <label class="form-label">Nama Papan</label>
-                            <input type="text" name="nama_papan" class="form-control" 
-                                   placeholder="Contoh: Sarapan Pagi, Di Sekolah" required>
-                            <div class="form-text mt-2">Gunakan nama yang mudah dipahami pendamping.</div>
-                        </div>
+                       <div class="mb-4">
+    <label class="form-label">Nama Papan</label>
+    <input type="text" name="nama_papan" class="form-control" 
+           placeholder="Contoh: Sarapan Pagi, Di Sekolah" required>
+    <div class="form-text mt-2">Gunakan nama yang mudah dipahami pendamping.</div>
+</div>
+
+<div class="mb-4">
+    <label class="form-label">Ikon Papan</label>
+    <div class="input-group position-relative" style="max-width: 200px;">
+        <button class="btn btn-outline-secondary" type="button" id="tombol-emoji">
+            📋 Pilih
+        </button>
+        <input type="text" name="ikon_papan" id="input-ikon" class="form-control text-center" value="📋" readonly required>
+        <!-- Wadah Emoji Picker element -->
+        <div id="wadah-emoji" style="display: none; position: absolute; z-index: 1050; top: 110%; left: 0; box-shadow: 0 10px 25px rgba(0,0,0,0.15); border-radius: 8px;">
+            <emoji-picker></emoji-picker>
+        </div>
+    </div>
+    <div class="form-text mt-2">Klik tombol "Pilih" untuk mencari emoji yang sesuai dengan tema.</div>
+</div>
                         
                         <div class="mb-4">
                             <label class="form-label">Ukuran Kotak (Grid)</label>
@@ -212,5 +234,36 @@ $avatar = $avatar_map[$profil['jenis_abk']] ?? '😊';
 <?php include '../inc/footer.php'; ?>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tombolEmoji = document.querySelector('#tombol-emoji');
+    const inputIkon = document.querySelector('#input-ikon');
+    const wadahEmoji = document.querySelector('#wadah-emoji');
+    const picker = document.querySelector('emoji-picker');
+
+    // Munculkan popup saat tombol diklik
+    tombolEmoji.addEventListener('click', (e) => {
+        e.preventDefault();
+        wadahEmoji.style.display = wadahEmoji.style.display === 'none' ? 'block' : 'none';
+    });
+
+    // Ketika emoji dipilih dari popup
+    picker.addEventListener('emoji-click', event => {
+        const emoji = event.detail.unicode;
+        inputIkon.value = emoji;
+        tombolEmoji.innerHTML = emoji + ' Pilih';
+        wadahEmoji.style.display = 'none'; // sembunyikan kembali
+    });
+
+    // Sembunyikan ketika diklik di luar area tombol dan picker
+    document.addEventListener('click', (event) => {
+        if (!tombolEmoji.contains(event.target) && !wadahEmoji.contains(event.target)) {
+            wadahEmoji.style.display = 'none';
+        }
+    });
+});
+</script>
 </body>
 </html>

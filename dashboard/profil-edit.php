@@ -24,13 +24,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (strlen($pin) !== 4 || !ctype_digit($pin)) {
         $error = 'PIN harus tepat 4 angka.';
     } else {
-        $update = $conn->prepare("UPDATE profil_abk SET nama=?, pin=?, jenis_abk=? WHERE id=?");
-        $update->bind_param('sssi', $nama, $pin, $jenis_abk, $id);
-        if ($update->execute()) {
-            setFlash('sukses', "Profil {$nama} berhasil diperbarui! 🎉");
-            redirect('dashboard/index.php');
-        } else {
-            $error = 'Gagal menyimpan profil. Coba lagi.';
+        $foto_profil = $profil['foto_profil'];
+
+        if (isset($_FILES['foto_profil']) && $_FILES['foto_profil']['error'] === UPLOAD_ERR_OK) {
+            $ext = strtolower(pathinfo($_FILES['foto_profil']['name'], PATHINFO_EXTENSION));
+            $allowed = ['jpg', 'jpeg', 'png', 'webp'];
+            
+            if (!in_array($ext, $allowed)) {
+                $error = 'Format foto harus berupa JPG, PNG, atau WEBP.';
+            } elseif ($_FILES['foto_profil']['size'] > 2 * 1024 * 1024) {
+                $error = 'Ukuran foto terlalu besar. Maksimal 2MB.';
+            } else {
+                $foto_baru = uniqid('profil_') . '.' . $ext;
+                $tujuan = '../uploads/profil/' . $foto_baru;
+                if (move_uploaded_file($_FILES['foto_profil']['tmp_name'], $tujuan)) {
+                    if (!empty($foto_profil) && file_exists('../uploads/profil/' . $foto_profil)) {
+                        unlink('../uploads/profil/' . $foto_profil);
+                    }
+                    $foto_profil = $foto_baru;
+                } else {
+                    $error = 'Gagal menyimpan foto profil ke server.';
+                }
+            }
+        }
+
+        if (!$error) {
+            $update = $conn->prepare("UPDATE profil_abk SET nama=?, pin=?, jenis_abk=?, foto_profil=? WHERE id=?");
+            $update->bind_param('ssssi', $nama, $pin, $jenis_abk, $foto_profil, $id);
+            if ($update->execute()) {
+                setFlash('sukses', "Profil {$nama} berhasil diperbarui! 🎉");
+                redirect('dashboard/index.php');
+            } else {
+                $error = 'Gagal menyimpan profil. Coba lagi.';
+            }
         }
     }
 }
@@ -223,7 +249,19 @@ $jenis_abk_list = [
             <div class="alert-gagal"><?= $error ?></div>
         <?php endif; ?>
 
-        <form method="POST" action="">
+        <form method="POST" action="" enctype="multipart/form-data">
+        
+            <!-- Foto Profil -->
+            <div class="form-group">
+                <label>Foto Wajah (Opsional)</label>
+                <?php if (!empty($profil['foto_profil'])): ?>
+                    <div style="margin-bottom: 10px;">
+                        <img src="../uploads/profil/<?= htmlspecialchars($profil['foto_profil']) ?>" alt="Foto Profil" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #E5E7EB; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                    </div>
+                <?php endif; ?>
+                <input type="file" name="foto_profil" accept="image/jpeg, image/png, image/webp" style="padding: 10px;">
+                <p class="form-hint">Maksimal 2MB. Kosongkan jika tidak ingin mengubah foto.</p>
+            </div>
 
             <!-- Nama -->
             <div class="form-group">

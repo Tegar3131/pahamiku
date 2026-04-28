@@ -232,7 +232,63 @@ $avatar_map = [
             font-size: 52px;
             margin-bottom: 12px;
             display: block;
+            line-height: 1;
         }
+        .profil-foto {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 0 auto 12px;
+            display: block;
+            border: 3px solid var(--abu-muda);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        .profil-foto:hover { transform: scale(1.05); border-color: var(--kuning); }
+
+        /* ── Lightbox Popup ── */
+        .lightbox {
+            display: none; 
+            position: fixed; 
+            z-index: 9999; 
+            left: 0; 
+            top: 0; 
+            width: 100%; 
+            height: 100%; 
+            background-color: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .lightbox.tampil {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 1;
+        }
+        .lightbox img {
+            max-width: 90%;
+            max-height: 80vh;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            transform: scale(0.8);
+            transition: transform 0.3s ease;
+        }
+        .lightbox.tampil img { transform: scale(1); }
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: #fff;
+            font-size: 44px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+            transition: color 0.2s;
+        }
+        .lightbox-close:hover { color: var(--kuning); }
         .profil-nama {
             font-family: 'Baloo 2', cursive;
             font-size: 20px;
@@ -407,9 +463,6 @@ $avatar_map = [
             .topbar { padding: 0 16px; }
             .topbar-nama { display: none; }
             .main { padding: 20px 16px; }
-            .profil-grid { grid-template-columns: 1fr 1fr; }
-        }
-        @media (max-width: 400px) {
             .profil-grid { grid-template-columns: 1fr; }
         }
     </style>
@@ -448,7 +501,11 @@ $avatar_map = [
                 $avatar = $avatar_map[$profil['jenis_abk']] ?? '😊';
             ?>
             <div class="kartu-profil">
-                <span class="profil-avatar"><?= $avatar ?></span>
+                <?php if (!empty($profil['foto_profil'])): ?>
+                    <img src="../uploads/profil/<?= htmlspecialchars($profil['foto_profil']) ?>" class="profil-foto" alt="Foto Wajah" onclick="bukaLightbox(this.src)">
+                <?php else: ?>
+                    <span class="profil-avatar"><?= $avatar ?></span>
+                <?php endif; ?>
                 <div class="profil-nama"><?= htmlspecialchars($profil['nama']) ?></div>
                 <span class="profil-jenis">
                     <?= $profil['jenis_abk'] ? htmlspecialchars($profil['jenis_abk']) : 'Umum' ?>
@@ -467,10 +524,10 @@ $avatar_map = [
                     <a href="papan-list.php?profil_id=<?= $profil['id'] ?>" 
                        class="btn-kecil btn-papan">📋 Papan</a>
                     <a href="profil-edit.php?id=<?= $profil['id'] ?>" 
-                       class="btn-kecil btn-edit">✏️</a>
+                       class="btn-kecil btn-edit">✏️ Edit</a>
                     <a href="dashboard-profil-hapus.php?id=<?= $profil['id'] ?>" 
                        class="btn-kecil btn-hapus"
-                       onclick="return confirm('Hapus profil <?= htmlspecialchars($profil['nama']) ?>? Semua papannya juga akan terhapus.')">🗑️</a>
+                       onclick="return confirm('Hapus profil <?= htmlspecialchars($profil['nama']) ?>? Semua papannya juga akan terhapus.')">🗑️ Hapus</a>
                 </div>
             </div>
             <?php endforeach; ?>
@@ -514,7 +571,28 @@ $avatar_map = [
 
 </div><!-- /main -->
 
+<!-- ── Lightbox Container ── -->
+<div id="lightbox-foto" class="lightbox" onclick="tutupLightbox()">
+    <span class="lightbox-close">&times;</span>
+    <img id="lightbox-img" src="" alt="Perbesaran Foto Wajah" onclick="event.stopPropagation()">
+</div>
+
 <?php include '../inc/footer.php'; ?>
+
+<script>
+function bukaLightbox(srcUrl) {
+    const lightbox = document.getElementById('lightbox-foto');
+    document.getElementById('lightbox-img').src = srcUrl;
+    lightbox.style.display = 'flex';
+    // Gunakan timeout super kecil untuk memancing animasi transisi CSS
+    setTimeout(() => { lightbox.classList.add('tampil'); }, 10);
+}
+function tutupLightbox() {
+    const lightbox = document.getElementById('lightbox-foto');
+    lightbox.classList.remove('tampil');
+    setTimeout(() => { lightbox.style.display = 'none'; }, 300); // 300ms sesuai durasi transisi
+}
+</script>
 
 </body>
 </html>

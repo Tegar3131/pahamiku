@@ -15,9 +15,13 @@ $profil = $stmt->get_result()->fetch_assoc();
 if (!$profil) redirect('dashboard/index.php');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $nama      = bersihkan($_POST['nama'] ?? '');
-    $pin       = bersihkan($_POST['pin'] ?? '');
-    $jenis_abk = bersihkan($_POST['jenis_abk'] ?? '');
+    $nama                 = bersihkan($_POST['nama'] ?? '');
+    $pin                  = bersihkan($_POST['pin'] ?? '');
+    $jenis_abk            = bersihkan($_POST['jenis_abk'] ?? '');
+    $kategori_usia        = bersihkan($_POST['kategori_usia'] ?? '');
+    $kebutuhan_komunikasi = bersihkan($_POST['kebutuhan_komunikasi'] ?? '');
+    $deskripsi_singkat    = bersihkan($_POST['deskripsi_singkat'] ?? '');
+    $is_public            = isset($_POST['is_public']) ? 1 : 0;
 
     if (!$nama) {
         $error = 'Nama pengguna wajib diisi.';
@@ -49,8 +53,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (!$error) {
-            $update = $conn->prepare("UPDATE profil_abk SET nama=?, pin=?, jenis_abk=?, foto_profil=? WHERE id=?");
-            $update->bind_param('ssssi', $nama, $pin, $jenis_abk, $foto_profil, $id);
+            $update = $conn->prepare("UPDATE profil_abk SET nama=?, pin=?, jenis_abk=?, foto_profil=?, kategori_usia=?, kebutuhan_komunikasi=?, deskripsi_singkat=?, is_public=? WHERE id=?");
+            $update->bind_param('ssssssssi', $nama, $pin, $jenis_abk, $foto_profil, $kategori_usia, $kebutuhan_komunikasi, $deskripsi_singkat, $is_public, $id);
             if ($update->execute()) {
                 setFlash('sukses', "Profil {$nama} berhasil diperbarui! 🎉");
                 redirect('dashboard/index.php');
@@ -287,6 +291,44 @@ $jenis_abk_list = [
                     <?php endforeach; ?>
                 </select>
                 <p class="form-hint">Pilihan ini mempengaruhi avatar di halaman login.</p>
+            </div>
+
+            <!-- Kategori Usia -->
+            <div class="form-group">
+                <label>Kategori Usia</label>
+                <select name="kategori_usia">
+                    <option value="">-- Pilih --</option>
+                    <?php 
+                    $curr_usia = $_POST['kategori_usia'] ?? $profil['kategori_usia']; 
+                    $usia_list = ['Balita (0-5 tahun)', 'Anak-anak (6-12 tahun)', 'Remaja (13-17 tahun)', 'Dewasa (18+ tahun)'];
+                    foreach($usia_list as $u):
+                    ?>
+                        <option value="<?= $u ?>" <?= ($curr_usia === $u) ? 'selected' : '' ?>><?= $u ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <!-- Kebutuhan Komunikasi -->
+            <div class="form-group">
+                <label>Kebutuhan Komunikasi</label>
+                <input type="text" name="kebutuhan_komunikasi" 
+                       placeholder="Contoh: Non-verbal, Speech Delay, dll"
+                       value="<?= htmlspecialchars($_POST['kebutuhan_komunikasi'] ?? $profil['kebutuhan_komunikasi']) ?>">
+            </div>
+
+            <!-- Deskripsi Singkat -->
+            <div class="form-group">
+                <label>Deskripsi Singkat (Kondisi/Preferensi)</label>
+                <textarea name="deskripsi_singkat" rows="3" style="width: 100%; padding: 14px 16px; border: 2px solid #E5E7EB; border-radius: 12px; font-family: 'Nunito', sans-serif; font-size: 15px; background: #FAFAFA; outline: none;"><?= htmlspecialchars($_POST['deskripsi_singkat'] ?? $profil['deskripsi_singkat']) ?></textarea>
+            </div>
+
+            <!-- Privasi -->
+            <div class="form-group">
+                <label style="display:flex; align-items:center; gap:8px;">
+                    <input type="checkbox" name="is_public" value="1" style="width:20px; height:20px;" <?= (!empty($_POST['is_public']) || $profil['is_public']) ? 'checked' : '' ?>>
+                    Izinkan Tampil di Profil Publik Saya
+                </label>
+                <p class="form-hint" style="margin-top:2px;">Jika dicentang, profil ini akan muncul di halaman kreator publik Anda.</p>
             </div>
 
             <!-- PIN -->

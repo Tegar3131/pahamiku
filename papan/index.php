@@ -44,6 +44,43 @@ if (!$papan) {
     exit;
 }
 
+// ==========================================
+// LOGIKA AKSES (Private vs Public)
+// ==========================================
+$akses = $papan['access_type'] ?? 'private';
+if ($akses === 'private') {
+    $id_user_login = $_SESSION['user_id'] ?? 0;
+    $id_abk_login  = $_SESSION['profil_id'] ?? 0;
+    $boleh_akses   = false;
+
+    // 1. Jika pengguna adalah ABK yang memiliki papan ini
+    if ($id_abk_login && $id_abk_login == $papan['profil_id']) {
+        $boleh_akses = true;
+    }
+    // 2. Jika pengguna adalah pendamping yang memiliki profil ABK ini
+    elseif ($id_user_login && $papan['profil_id']) {
+        $stmt_cek = $conn->prepare("SELECT id FROM profil_abk WHERE id = ? AND user_id = ?");
+        $stmt_cek->bind_param('ii', $papan['profil_id'], $id_user_login);
+        $stmt_cek->execute();
+        if ($stmt_cek->get_result()->num_rows > 0) {
+            $boleh_akses = true;
+        }
+    }
+    // 3. Papan global (preset) tanpa profil_id
+    elseif ($papan['profil_id'] === null) {
+        $boleh_akses = true;
+    }
+
+    if (!$boleh_akses) {
+        echo "<div style='text-align:center; padding:50px; font-family:sans-serif;'>
+                <h2>🔒 Papan ini bersifat Privat</h2>
+                <p>Maaf, Anda tidak memiliki izin untuk melihat papan ini.</p>
+                <a href='../index.php'>Kembali ke Beranda</a>
+              </div>";
+        exit;
+    }
+}
+
 // Ambil semua simbol di papan ini
 $stmt_s = $conn->prepare("SELECT * FROM papan_simbol WHERE papan_id = ? ORDER BY urutan ASC");
 $stmt_s->bind_param('i', $papan_id);
@@ -371,23 +408,29 @@ $grid_cols = explode('x', $grid_raw)[0];
     <div style="height: 10vh; width: 100%; grid-column: 1 / -1;"></div>
 </div>
 
-<div class="nav-bawah">
-    <?php if ($profil_id): ?>
-    <a href="../logout.php?jenis=abk" class="btn-nav btn-keluar">
-        <span class="ikon-btn">👋</span> Keluar
-    </a>
-    <?php else: ?>
+<div class="nav-bawah" <?= $profil_id ? 'style="justify-content: center;"' : '' ?>>
+    <?php if (!$profil_id): ?>
     <a href="<?= BASE_URL ?>index.php" class="btn-nav btn-keluar" style="background:#4ECDC4; box-shadow:0 5px 0 #2A9E96;">
         <span class="ikon-btn">🏠</span> Beranda
     </a>
     <?php endif; ?>
     
-    <button class="btn-nav btn-pilih-papan" 
-            data-bs-toggle="modal" 
-            data-bs-target="#modalPilihPapan" 
-            aria-label="Ganti papan komunikasi">
-        <span class="ikon-btn">📂</span> Ganti Papan Komunikasi
-    </button>
+    <?php if (($papan['access_type'] ?? 'private') === 'public' && $papan['profil_id'] !== null && !$profil_id): ?>
+        <a href="<?= BASE_URL ?>dashboard/papan-duplikat.php?papan_id=<?= $papan_id ?>" class="btn-nav btn-pilih-papan" style="background:#4ECDC4; color:white; box-shadow:0 5px 0 #2A9E96; text-decoration:none;">
+            <span class="ikon-btn">⬇️</span> Salin Papan Ini
+        </a>
+    <?php elseif ($profil_id): ?>
+        <a href="pilih.php" class="btn-nav btn-pilih-papan" aria-label="Ganti papan komunikasi">
+            <span class="ikon-btn">📂</span> Ganti Papan
+        </a>
+    <?php else: ?>
+        <button class="btn-nav btn-pilih-papan"
+                data-bs-toggle="modal"
+                data-bs-target="#modalPilihPapan"
+                aria-label="Ganti papan komunikasi">
+            <span class="ikon-btn">📂</span> Ganti Papan
+        </button>
+    <?php endif; ?>
 </div>
 
 <div class="modal fade modal-abk" 

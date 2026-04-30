@@ -18,11 +18,12 @@ if (!$profil) redirect('dashboard/index.php');
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nama_papan'])) {
     $nama_papan = bersihkan($_POST['nama_papan']);
     $grid       = $_POST['grid']; 
-    $ikon_papan = bersihkan($_POST['ikon_papan']); // Tambahkan baris ini
+    $ikon_papan = bersihkan($_POST['ikon_papan']);
+    $access     = $_POST['access_type'] ?? 'private';
+    $deskripsi  = isset($_POST['deskripsi']) ? bersihkan($_POST['deskripsi']) : '';
 
-    // Ubah query INSERT untuk memasukkan ikon_papan
-    $stmt_ins = $conn->prepare("INSERT INTO papan (profil_id, nama_papan, ikon_papan, grid) VALUES (?, ?, ?, ?)");
-    $stmt_ins->bind_param('isss', $profil_id, $nama_papan, $ikon_papan, $grid);
+    $stmt_ins = $conn->prepare("INSERT INTO papan (profil_id, nama_papan, ikon_papan, grid, access_type, deskripsi) VALUES (?, ?, ?, ?, ?, ?)");
+    $stmt_ins->bind_param('isssss', $profil_id, $nama_papan, $ikon_papan, $grid, $access, $deskripsi);
     
     if ($stmt_ins->execute()) {
         $papan_id = $conn->insert_id;
@@ -174,12 +175,15 @@ $avatar = $avatar_map[$profil['jenis_abk']] ?? '😊';
     <div class="row justify-content-center">
         <div class="col-md-6 col-lg-5">
             
-            <a href="papan-list.php?profil_id=<?= $profil_id ?>" class="btn-kembali">
-                <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-                    <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
-                </svg>
-                Kembali ke Daftar Papan
-            </a>
+            <nav aria-label="breadcrumb" style="margin-bottom: 24px;">
+                <ol style="list-style: none; display: flex; gap: 10px; align-items: center; font-weight: 800; font-size: 14px; color: var(--abu); margin: 0; padding: 0; flex-wrap: wrap;">
+                    <li><a href="index.php" style="color: var(--biru); text-decoration: none; transition: 0.2s;" onmouseover="this.style.color='var(--gelap)'" onmouseout="this.style.color='var(--biru)'">Dashboard</a></li>
+                    <li style="font-size: 12px; opacity: 0.5;">▶</li>
+                    <li><a href="papan-list.php?profil_id=<?= $profil_id ?>" style="color: var(--biru); text-decoration: none; transition: 0.2s;" onmouseover="this.style.color='var(--gelap)'" onmouseout="this.style.color='var(--biru)'">Papan <?= htmlspecialchars($profil['nama']) ?></a></li>
+                    <li style="font-size: 12px; opacity: 0.5;">▶</li>
+                    <li style="color: var(--gelap);">Buat Papan</li>
+                </ol>
+            </nav>
 
             <div class="card card-custom">
                 <div class="card-header-custom">
@@ -212,6 +216,21 @@ $avatar = $avatar_map[$profil['jenis_abk']] ?? '😊';
 </div>
                         
                         <div class="mb-4">
+                            <label class="form-label">Tipe Akses</label>
+                            <select name="access_type" class="form-select">
+                                <option value="private" selected>🔒 Privat (Hanya Pemilik)</option>
+                                <option value="public">🌐 Publik (Bisa Diakses dengan Link)</option>
+                            </select>
+                            <div class="form-text mt-2">Papan publik dapat dilihat oleh siapa saja yang memiliki link.</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">Deskripsi Papan (Opsional)</label>
+                            <textarea name="deskripsi" class="form-control" rows="3" placeholder="Contoh: Papan ini ditujukan untuk aktivitas makan siang anak agar dapat mandiri memilih makanan."></textarea>
+                            <div class="form-text mt-2">Penting jika dijadikan publik agar pendamping lain paham kegunaannya.</div>
+                        </div>
+
+                        <div class="mb-4">
                             <label class="form-label">Ukuran Kotak (Grid)</label>
                             <select name="grid" class="form-select">
                                 <option value="2x3">2 x 3 (Kecil - 6 Simbol)</option>
@@ -221,7 +240,7 @@ $avatar = $avatar_map[$profil['jenis_abk']] ?? '😊';
                             <div class="form-text mt-2">Tentukan seberapa banyak simbol yang ingin ditampilkan.</div>
                         </div>
 
-                        <button type="submit" class="btn btn-simpan">
+                        <button type="submit" class="btn-simpan">
                             Buat Papan & Susun Simbol →
                         </button>
                     </form>

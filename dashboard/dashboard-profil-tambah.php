@@ -7,9 +7,13 @@ $error  = '';
 
 // ── Proses: Simpan Profil Baru ────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $nama      = bersihkan($_POST['nama'] ?? '');
-    $pin       = bersihkan($_POST['pin'] ?? '');
-    $jenis_abk = bersihkan($_POST['jenis_abk'] ?? '');
+    $nama                 = bersihkan($_POST['nama'] ?? '');
+    $pin                  = bersihkan($_POST['pin'] ?? '');
+    $jenis_abk            = bersihkan($_POST['jenis_abk'] ?? '');
+    $kategori_usia        = bersihkan($_POST['kategori_usia'] ?? '');
+    $kebutuhan_komunikasi = bersihkan($_POST['kebutuhan_komunikasi'] ?? '');
+    $deskripsi_singkat    = bersihkan($_POST['deskripsi_singkat'] ?? '');
+    $is_public            = isset($_POST['is_public']) ? 1 : 0;
 
     // Validasi
     if (!$nama) {
@@ -40,10 +44,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$error) {
             $user_id = $_SESSION['user_id'];
             $stmt = $conn->prepare("
-                INSERT INTO profil_abk (user_id, nama, pin, jenis_abk, foto_profil) 
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO profil_abk (user_id, nama, pin, jenis_abk, foto_profil, kategori_usia, kebutuhan_komunikasi, deskripsi_singkat, is_public) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
-            $stmt->bind_param('issss', $user_id, $nama, $pin, $jenis_abk, $foto_profil);
+            $stmt->bind_param('isssssssi', $user_id, $nama, $pin, $jenis_abk, $foto_profil, $kategori_usia, $kebutuhan_komunikasi, $deskripsi_singkat, $is_public);
 
             if ($stmt->execute()) {
                 setFlash('sukses', "Profil {$nama} berhasil ditambahkan! 🎉");
@@ -276,16 +280,53 @@ $jenis_abk_list = [
                 <p class="form-hint">Pilihan ini mempengaruhi avatar di halaman login.</p>
             </div>
 
+            <!-- Kategori Usia -->
+            <div class="form-group">
+                <label>Kategori Usia</label>
+                <select name="kategori_usia">
+                    <option value="">-- Pilih --</option>
+                    <option value="Balita (0-5 tahun)" <?= (($_POST['kategori_usia'] ?? '') === 'Balita (0-5 tahun)') ? 'selected' : '' ?>>Balita (0-5 tahun)</option>
+                    <option value="Anak-anak (6-12 tahun)" <?= (($_POST['kategori_usia'] ?? '') === 'Anak-anak (6-12 tahun)') ? 'selected' : '' ?>>Anak-anak (6-12 tahun)</option>
+                    <option value="Remaja (13-17 tahun)" <?= (($_POST['kategori_usia'] ?? '') === 'Remaja (13-17 tahun)') ? 'selected' : '' ?>>Remaja (13-17 tahun)</option>
+                    <option value="Dewasa (18+ tahun)" <?= (($_POST['kategori_usia'] ?? '') === 'Dewasa (18+ tahun)') ? 'selected' : '' ?>>Dewasa (18+ tahun)</option>
+                </select>
+            </div>
+
+            <!-- Kebutuhan Komunikasi -->
+            <div class="form-group">
+                <label>Kebutuhan Komunikasi</label>
+                <input type="text" name="kebutuhan_komunikasi" 
+                       placeholder="Contoh: Non-verbal, Speech Delay, dll"
+                       value="<?= bersihkan($_POST['kebutuhan_komunikasi'] ?? '') ?>">
+            </div>
+
+            <!-- Deskripsi Singkat -->
+            <div class="form-group">
+                <label>Deskripsi Singkat (Kondisi/Preferensi)</label>
+                <textarea name="deskripsi_singkat" rows="3" style="width: 100%; padding: 14px 16px; border: 2px solid #E5E7EB; border-radius: 12px; font-family: 'Nunito', sans-serif; font-size: 15px; background: #FAFAFA; outline: none;"><?= bersihkan($_POST['deskripsi_singkat'] ?? '') ?></textarea>
+            </div>
+
+            <!-- Privasi -->
+            <div class="form-group">
+                <label style="display:flex; align-items:center; gap:8px;">
+                    <input type="checkbox" name="is_public" value="1" style="width:20px; height:20px;">
+                    Izinkan Tampil di Profil Publik Saya
+                </label>
+                <p class="form-hint" style="margin-top:2px;">Jika dicentang, profil ini akan muncul di halaman kreator publik Anda.</p>
+            </div>
+
             <!-- PIN -->
             <div class="form-group">
                 <label>PIN 4 Angka *</label>
-                <input type="number" name="pin" 
-                       id="input-pin"
-                       placeholder="Contoh: 1234"
-                       min="1000" max="9999"
-                       value="<?= bersihkan($_POST['pin'] ?? '') ?>"
-                       oninput="updatePinPreview(this.value)"
-                       required>
+                <input type="text" name="pin" 
+       id="input-pin"
+       placeholder="Contoh: 1234"
+       maxlength="4"
+       inputmode="numeric"
+       pattern="[0-9]{4}"
+       value="<?= bersihkan($_POST['pin'] ?? '') ?>"
+       oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4); updatePinPreview(this.value);"
+       required>
                 <!-- Preview PIN -->
                 <div class="pin-preview">
                     <div class="pin-box" id="pb0">_</div>
@@ -309,7 +350,10 @@ $jenis_abk_list = [
 
 <script>
 function updatePinPreview(val) {
-    var digits = val.toString().slice(0, 4).split('');
+    val = val.toString().replace(/[^0-9]/g, '').slice(0, 4);
+    document.getElementById('input-pin').value = val;
+
+    var digits = val.split('');
     for (var i = 0; i < 4; i++) {
         var box = document.getElementById('pb' + i);
         if (digits[i]) {

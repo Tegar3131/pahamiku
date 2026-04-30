@@ -2,9 +2,9 @@
 if (session_status() === PHP_SESSION_NONE) session_start();
 include 'inc/config.php'; 
 
-// Kalau sudah login, langsung ke papan
+// Kalau sudah login, langsung ke halaman pilih papan
 if (isset($_SESSION['profil_id'])) {
-    redirect('papan/index.php');
+    redirect('papan/pilih.php');
 }
 
 $error = '';
@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['profil_id']   = $profil['id'];
             $_SESSION['profil_nama'] = $profil['nama'];
             $_SESSION['jenis_abk']   = $profil['jenis_abk'];
-            redirect('papan/index.php');
+            redirect('papan/pilih.php');
         } else {
             $error = 'PIN salah. Coba lagi ya! 😊';
         }

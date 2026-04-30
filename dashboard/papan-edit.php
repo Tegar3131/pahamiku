@@ -954,6 +954,10 @@ $grid_cols = explode('x', $papan['grid'])[0];
         </div>
     </div>
     <div class="topbar-actions">
+        <!-- Pengaturan Board -->
+        <button class="btn-open-panel" style="background:var(--gelap); margin-right:5px;" onclick="bukaModalSettings()">
+            ⚙️ Setelan
+        </button>
         <!-- Hanya tampil di mobile -->
         <button class="btn-open-panel" onclick="bukaDrawer()">
             ＋ Tambah Simbol
@@ -1136,6 +1140,59 @@ $grid_cols = explode('x', $papan['grid'])[0];
 
         <button class="btn-modal-submit" onclick="simpanKePapanLokal()">
             ✅ Tambahkan ke Papan
+        </button>
+    </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════
+     MODAL — PENGATURAN PAPAN
+     (Akses Publik/Privat, Nama, Grid)
+═══════════════════════════════════════ -->
+<div class="modal-backdrop-custom" id="modalSettings">
+    <div class="modal-box" style="max-width: 480px;">
+        <button class="modal-tutup" onclick="tutupModal('modalSettings')">✕</button>
+        <div class="modal-title">⚙️ Pengaturan Papan</div>
+
+        <div class="form-group">
+            <label class="form-label">Nama Papan</label>
+            <input type="text" id="setting-nama" class="form-input" value="<?= htmlspecialchars($papan['nama_papan']) ?>">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Deskripsi Papan</label>
+            <textarea id="setting-deskripsi" class="form-input" style="height: 80px; resize: none;" placeholder="Jelaskan secara singkat tujuan papan ini..."><?= htmlspecialchars($papan['deskripsi'] ?? '') ?></textarea>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Tipe Akses</label>
+            <select id="setting-akses" class="form-input" onchange="toggleLinkShare()">
+                <option value="private" <?= ($papan['access_type'] ?? 'private') === 'private' ? 'selected' : '' ?>>🔒 Privat (Hanya Pemilik)</option>
+                <option value="public" <?= ($papan['access_type'] ?? 'private') === 'public' ? 'selected' : '' ?>>🌐 Publik (Siapa saja dengan link)</option>
+            </select>
+        </div>
+
+        <div id="area-link-share" style="display: <?= ($papan['access_type'] ?? 'private') === 'public' ? 'block' : 'none' ?>; margin-bottom: 20px; padding: 12px; background: #f0fdfa; border: 1px solid #ccfbf1; border-radius: 12px;">
+            <label class="form-label" style="color: #115e59;">🔗 Link Publik:</label>
+            <div style="display: flex; gap: 8px;">
+                <input type="text" class="form-input" style="font-size: 11px; padding: 8px; flex: 1;" readonly id="link-publik-teks" value="<?= BASE_URL ?>papan/index.php?papan_id=<?= $papan_id ?>">
+                <button type="button" class="btn-modal-submit" style="width: auto; padding: 0 12px; margin: 0; font-size: 13px;" onclick="copyLinkPublik()">Salin</button>
+            </div>
+            <p style="font-size: 10px; color: #14b8a6; margin-top: 6px; font-weight: 700;">Pengguna lain bisa memakai papan ini tanpa harus login.</p>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Ukuran Kotak (Grid)</label>
+            <select id="setting-grid" class="form-input">
+                <option value="2x3" <?= $papan['grid'] === '2x3' ? 'selected' : '' ?>>2 x 3 (6 Simbol)</option>
+                <option value="3x3" <?= $papan['grid'] === '3x3' ? 'selected' : '' ?>>3 x 3 (9 Simbol)</option>
+                <option value="3x4" <?= $papan['grid'] === '3x4' ? 'selected' : '' ?>>3 x 4 (12 Simbol)</option>
+                <option value="4x5" <?= $papan['grid'] === '4x5' ? 'selected' : '' ?>>4 x 5 (20 Simbol)</option>
+            </select>
+        </div>
+
+        <button class="btn-modal-submit" onclick="simpanSettingsPapan()">
+            💾 Simpan Perubahan
         </button>
     </div>
 </div>
@@ -1451,6 +1508,49 @@ function simpanSimbolKustom() {
                 setTimeout(() => location.reload(), 800);
             } else {
                 tampilToast('❌ Gagal menyimpan. Coba lagi.', 'gagal');
+            }
+        });
+}
+
+// ─── PENGATURAN PAPAN (Akses, Nama, Grid) ──────────
+function bukaModalSettings() {
+    document.getElementById('modalSettings').classList.add('tampil');
+}
+function toggleLinkShare() {
+    const akses = document.getElementById('setting-akses').value;
+    document.getElementById('area-link-share').style.display = (akses === 'public') ? 'block' : 'none';
+}
+function copyLinkPublik() {
+    const link = document.getElementById('link-publik-teks');
+    link.select();
+    link.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(link.value);
+    tampilToast('📋 Link berhasil disalin!', 'sukses');
+}
+function simpanSettingsPapan() {
+    const nama = document.getElementById('setting-nama').value.trim();
+    const grid = document.getElementById('setting-grid').value;
+    const akses = document.getElementById('setting-akses').value;
+    const deskripsi = document.getElementById('setting-deskripsi').value.trim();
+
+    if (!nama) return tampilToast('⚠️ Nama papan tidak boleh kosong', 'gagal');
+
+    const fd = new FormData();
+    fd.append('aksi', 'update_papan_settings');
+    fd.append('papan_id', <?= $papan_id ?>);
+    fd.append('nama_papan', nama);
+    fd.append('grid', grid);
+    fd.append('access_type', akses);
+    fd.append('deskripsi', deskripsi);
+
+    fetch('papan-aksi.php', { method: 'POST', body: fd })
+        .then(res => res.text())
+        .then(res => {
+            if (res.trim() === 'sukses') {
+                tampilToast('✅ Pengaturan berhasil diperbarui!', 'sukses');
+                setTimeout(() => location.reload(), 800);
+            } else {
+                tampilToast('❌ Gagal menyimpan pengaturan', 'gagal');
             }
         });
 }

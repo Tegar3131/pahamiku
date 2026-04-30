@@ -2,9 +2,9 @@
 if (session_status() === PHP_SESSION_NONE) session_start();
 include 'inc/config.php';
 
-// Kalau sudah login, langsung ke dashboard
+// Kalau sudah login, langsung ke halaman komunitas
 if (isset($_SESSION['user_id'])) {
-    redirect('dashboard/index.php');
+    redirect('komunitas.php');
 }
 
 $error  = '';
@@ -68,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['aksi']) && $_POST['ak
         if ($hasil && password_verify($password, $hasil['password'])) {
             $_SESSION['user_id']   = $hasil['id'];
             $_SESSION['user_nama'] = $hasil['nama'];
-            redirect('dashboard/index.php');
+            redirect('komunitas.php');
         } else {
             $error = 'Email atau password salah.';
         }

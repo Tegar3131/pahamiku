@@ -475,9 +475,14 @@ $avatar_map = [
 <div class="main">
 
     <!-- Salam -->
-    <div class="salam">
-        <h1>Dashboard Pendamping 👩‍🏫</h1>
-        <p>Kelola profil dan papan komunikasi pengguna Anda.</p>
+    <div class="salam" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <div>
+            <h1>Dashboard Pendamping 👩‍🏫</h1>
+            <p>Kelola profil dan papan komunikasi pengguna Anda.</p>
+        </div>
+        <a href="pengaturan-akun.php" class="btn-tambah" style="background: white; color: var(--gelap); border: 2px solid #E5E7EB; box-shadow: none;">
+            ⚙️ Pengaturan Profil Saya
+        </a>
     </div>
 
     <!-- Flash message -->

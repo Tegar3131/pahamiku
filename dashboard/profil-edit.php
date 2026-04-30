@@ -272,7 +272,7 @@ $jenis_abk_list = [
                 <label>Nama Pengguna *</label>
                 <input type="text" name="nama" 
                        placeholder="Contoh: Raka, Sari, Bimo"
-                       value="<?= htmlspecialchars($_POST['nama'] ?? $profil['nama']) ?>"
+                       value="<?= htmlspecialchars($_POST['nama'] ?? $profil['nama'] ?? '') ?>"
                        required>
             </div>
 
@@ -282,7 +282,7 @@ $jenis_abk_list = [
                 <select name="jenis_abk">
                     <option value="">-- Pilih (opsional) --</option>
                     <?php 
-                    $curr_jenis = $_POST['jenis_abk'] ?? $profil['jenis_abk'];
+                    $curr_jenis = $_POST['jenis_abk'] ?? $profil['jenis_abk'] ?? '';
                     foreach ($jenis_abk_list as $j): ?>
                         <option value="<?= $j ?>" 
                             <?= ($curr_jenis === $j) ? 'selected' : '' ?>>
@@ -299,7 +299,7 @@ $jenis_abk_list = [
                 <select name="kategori_usia">
                     <option value="">-- Pilih --</option>
                     <?php 
-                    $curr_usia = $_POST['kategori_usia'] ?? $profil['kategori_usia']; 
+                    $curr_usia = $_POST['kategori_usia'] ?? $profil['kategori_usia'] ?? ''; 
                     $usia_list = ['Balita (0-5 tahun)', 'Anak-anak (6-12 tahun)', 'Remaja (13-17 tahun)', 'Dewasa (18+ tahun)'];
                     foreach($usia_list as $u):
                     ?>
@@ -313,13 +313,13 @@ $jenis_abk_list = [
                 <label>Kebutuhan Komunikasi</label>
                 <input type="text" name="kebutuhan_komunikasi" 
                        placeholder="Contoh: Non-verbal, Speech Delay, dll"
-                       value="<?= htmlspecialchars($_POST['kebutuhan_komunikasi'] ?? $profil['kebutuhan_komunikasi']) ?>">
+                       value="<?= htmlspecialchars($_POST['kebutuhan_komunikasi'] ?? $profil['kebutuhan_komunikasi'] ?? '') ?>">
             </div>
 
             <!-- Deskripsi Singkat -->
             <div class="form-group">
                 <label>Deskripsi Singkat (Kondisi/Preferensi)</label>
-                <textarea name="deskripsi_singkat" rows="3" style="width: 100%; padding: 14px 16px; border: 2px solid #E5E7EB; border-radius: 12px; font-family: 'Nunito', sans-serif; font-size: 15px; background: #FAFAFA; outline: none;"><?= htmlspecialchars($_POST['deskripsi_singkat'] ?? $profil['deskripsi_singkat']) ?></textarea>
+                <textarea name="deskripsi_singkat" rows="3" style="width: 100%; padding: 14px 16px; border: 2px solid #E5E7EB; border-radius: 12px; font-family: 'Nunito', sans-serif; font-size: 15px; background: #FAFAFA; outline: none;"><?= htmlspecialchars($_POST['deskripsi_singkat'] ?? $profil['deskripsi_singkat'] ?? '') ?></textarea>
             </div>
 
             <!-- Privasi -->

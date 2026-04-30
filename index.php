@@ -332,21 +332,93 @@ if ($res_top) {
         .board-desc { font-size: 14px; color: var(--abu); flex-grow: 1; }
         .board-creator { font-size: 12px; color: #94A3B8; font-weight: 700; border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: auto;}
 
-        /* ── CTA Sederhana untuk Anak ── */
+        /* ── CTA Besar untuk Anak ── */
         .cta-abk {
-            padding: 60px 20px;
+            padding: 80px 20px;
             text-align: center;
+            background: linear-gradient(180deg, var(--putih) 0%, #FFF7ED 100%);
         }
         .cta-abk-box {
-            max-width: 600px;
+            max-width: 700px;
             margin: 0 auto;
-            background: linear-gradient(135deg, #FFD93D, #F4C430);
-            padding: 40px;
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow);
+            background: linear-gradient(135deg, #FFD93D 0%, #FDBA74 100%);
+            padding: 50px 40px;
+            border-radius: 32px;
+            box-shadow: 0 20px 60px rgba(253, 186, 116, 0.35);
+            position: relative;
+            overflow: hidden;
         }
-        .cta-abk-box h2 { font-family: 'Baloo 2'; font-size: 28px; margin-bottom: 20px; }
-        .cta-abk-box p { font-weight: 600; margin-bottom: 30px; }
+        .cta-abk-box::before {
+            content: '';
+            position: absolute;
+            width: 120px; height: 120px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.15);
+            top: -30px; left: -30px;
+            animation: float-bubble 4s ease-in-out infinite;
+        }
+        .cta-abk-box::after {
+            content: '';
+            position: absolute;
+            width: 80px; height: 80px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            bottom: -20px; right: 40px;
+            animation: float-bubble 5s ease-in-out infinite 1s;
+        }
+        @keyframes float-bubble {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-15px) scale(1.1); }
+        }
+        .cta-abk-icon {
+            font-size: 72px;
+            display: block;
+            margin-bottom: 16px;
+            animation: bounce-icon 2s ease-in-out infinite;
+        }
+        @keyframes bounce-icon {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-12px); }
+        }
+        .cta-abk-box h2 {
+            font-family: 'Baloo 2', cursive;
+            font-size: 34px;
+            margin-bottom: 12px;
+            color: var(--gelap);
+            position: relative;
+            z-index: 1;
+        }
+        .cta-abk-box p {
+            font-weight: 700;
+            margin-bottom: 32px;
+            font-size: 17px;
+            color: #78350F;
+            position: relative;
+            z-index: 1;
+            line-height: 1.6;
+        }
+        .btn-abk-big {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 20px 44px;
+            background: var(--gelap);
+            color: white;
+            border-radius: 50px;
+            font-family: 'Baloo 2', cursive;
+            font-weight: 800;
+            font-size: 22px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 24px rgba(26, 26, 46, 0.3);
+            position: relative;
+            z-index: 1;
+        }
+        .btn-abk-big:hover {
+            transform: translateY(-5px) scale(1.03);
+            box-shadow: 0 16px 40px rgba(26, 26, 46, 0.4);
+            background: #2D2D4E;
+        }
 
         @keyframes masukAtas {
             from { opacity: 0; transform: translateY(30px); }
@@ -413,7 +485,17 @@ if ($res_top) {
     </div>
 </div>
 
-<!-- 3. FITUR SECTION -->
+<!-- 3. LOGIN ABK CTA (dipindah ke atas agar lebih mudah ditemukan anak) -->
+<div class="cta-abk">
+    <div class="cta-abk-box">
+        <span class="cta-abk-icon">🧒</span>
+        <h2>Halo! Mau pakai papan kamu?</h2>
+        <p>Tekan tombol besar di bawah ini untuk masuk ke papan komunikasimu. Cukup pilih nama dan masukkan PIN! 🎉</p>
+        <a href="login-abk.php" class="btn-abk-big">🚀 Masuk Sekarang!</a>
+    </div>
+</div>
+
+<!-- 4. FITUR SECTION -->
 <div class="fitur-section">
     <h2 class="section-title">Bagaimana Kami Membantu?</h2>
     <div class="fitur-grid">
@@ -471,15 +553,6 @@ if ($res_top) {
                 <?php endforeach; ?>
             <?php endif; ?>
         </div>
-    </div>
-</div>
-
-<!-- 5. LOGIN ABK CTA -->
-<div class="cta-abk">
-    <div class="cta-abk-box">
-        <h2>Punya akun dari pendamping?</h2>
-        <p>Klik tombol di bawah ini untuk mengaktifkan mode AAC khusus anak Anda, terbebas dari pengaturan maupun distraksi.</p>
-        <a href="login-abk.php" class="btn-hero" style="background: var(--gelap); color: white;">Akses Mode Pengguna (ABK)</a>
     </div>
 </div>
 

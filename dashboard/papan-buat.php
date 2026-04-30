@@ -226,8 +226,12 @@ $avatar = $avatar_map[$profil['jenis_abk']] ?? '😊';
 
                         <div class="mb-4">
                             <label class="form-label">Deskripsi Papan (Opsional)</label>
-                            <textarea name="deskripsi" class="form-control" rows="3" placeholder="Contoh: Papan ini ditujukan untuk aktivitas makan siang anak agar dapat mandiri memilih makanan."></textarea>
-                            <div class="form-text mt-2">Penting jika dijadikan publik agar pendamping lain paham kegunaannya.</div>
+                            <textarea name="deskripsi" id="input-deskripsi" class="form-control" rows="3" maxlength="300" placeholder="Contoh: Papan ini ditujukan untuk aktivitas makan siang anak agar dapat mandiri memilih makanan."
+                                oninput="hitungKarakter(this, 'counter-deskripsi', 300)"></textarea>
+                            <div class="d-flex justify-content-between align-items-center mt-1">
+                                <div class="form-text">Penting jika dijadikan publik agar pendamping lain paham kegunaannya.</div>
+                                <small id="counter-deskripsi" style="font-weight:700; color:#9CA3AF; white-space:nowrap;">0 / 300</small>
+                            </div>
                         </div>
 
                         <div class="mb-4">
@@ -283,6 +287,20 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+function hitungKarakter(el, counterId, maks) {
+    const counter = document.getElementById(counterId);
+    if (!counter) return;
+    const panjang = el.value.length;
+    counter.textContent = panjang + ' / ' + maks;
+    if (panjang >= maks) {
+        counter.style.color = '#EF4444';
+    } else if (panjang >= maks * 0.8) {
+        counter.style.color = '#F59E0B';
+    } else {
+        counter.style.color = '#9CA3AF';
+    }
+}
 </script>
 </body>
 </html>

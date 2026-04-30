@@ -131,7 +131,7 @@ $boards = $stmt_b->get_result()->fetch_all(MYSQLI_ASSOC);
     <!-- HEADER ANAK -->
     <div class="child-header">
         <?php if (!empty($anak['foto_profil'])): ?>
-            <img src="uploads/anak/<?= htmlspecialchars($anak['foto_profil']) ?>" class="child-avatar">
+            <img src="uploads/profil/<?= htmlspecialchars($anak['foto_profil']) ?>" class="child-avatar">
         <?php else: ?>
             <div class="child-avatar"><?= strtoupper(substr($anak['nama'], 0, 1)) ?></div>
         <?php endif; ?>

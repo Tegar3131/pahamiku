@@ -153,13 +153,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <div class="form-group">
                 <label>Bio Singkat</label>
-                <textarea name="bio" rows="3" placeholder="Ceritakan sedikit tentang Anda..."><?= htmlspecialchars($user['bio'] ?? '') ?></textarea>
+                <textarea name="bio" id="bio-textarea" rows="3" maxlength="200" placeholder="Ceritakan sedikit tentang Anda..." oninput="updateBioCounter()"><?= htmlspecialchars($user['bio'] ?? '') ?></textarea>
+                <div id="bio-counter" style="text-align: right; font-size: 12px; color: var(--abu); margin-top: 5px;">0 / 200</div>
             </div>
 
             <button type="submit" class="btn-submit">Simpan Profil</button>
         </form>
     </div>
 </div>
+
+<script>
+function updateBioCounter() {
+    const textarea = document.getElementById('bio-textarea');
+    const counter = document.getElementById('bio-counter');
+    const length = textarea.value.length;
+    counter.textContent = length + ' / 160';
+    
+    if (length >= 160) {
+        counter.style.color = 'var(--merah)';
+    } else {
+        counter.style.color = 'var(--abu)';
+    }
+}
+// Jalankan saat halaman dimuat untuk menghitung bio yang sudah ada
+document.addEventListener('DOMContentLoaded', updateBioCounter);
+</script>
 
 <?php include '../inc/footer.php'; ?>
 </body>

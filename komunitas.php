@@ -472,7 +472,8 @@ $usr = $is_logged_in ? getUserLogin($conn) : null;
                                 <div class="post-attachment" style="margin-bottom:0; cursor:default; pointer-events:none;">
                                     <div class="attachment-cover" id="preview_ikon">📋</div>
                                     <div class="attachment-footer">
-                                        <span class="attachment-domain">PAHAMIKU.COM/PAPAN</span>
+                                       
+
                                         <h4 class="attachment-title" id="preview_nama">Nama Papan</h4>
                                         <p class="attachment-desc" id="preview_meta">Profil Anak • Grid</p>
                                     </div>
@@ -551,7 +552,6 @@ $usr = $is_logged_in ? getUserLogin($conn) : null;
                         <a href="papan/index.php?papan_id=<?= $p['papan_id'] ?>" class="post-attachment" style="margin-bottom:0; border:none; border-radius:0;">
                             <div class="attachment-cover"><?= !empty($p['ikon_papan']) ? htmlspecialchars($p['ikon_papan']) : '📋' ?></div>
                             <div class="attachment-footer">
-                                <span class="attachment-domain">PAHAMIKU.COM/PAPAN</span>
                                 <h4 class="attachment-title"><?= htmlspecialchars($p['nama_papan']) ?></h4>
                                 <p class="attachment-desc">
                                     Kategori: <?= htmlspecialchars($p['kategori'] ?? 'Umum') ?> &nbsp;•&nbsp; Grid: <?= htmlspecialchars($p['grid']) ?>

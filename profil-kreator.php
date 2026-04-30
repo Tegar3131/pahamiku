@@ -23,6 +23,12 @@ $stmt->bind_param('ii', $logged_in_id, $target_id);
 $stmt->execute();
 $profil = $stmt->get_result()->fetch_assoc();
 
+// ── AMBIL DAFTAR ANAK (ABK) YANG DIDAMPINGI OLEH PENDAMPING INI (Hanya yang Publik) ──
+$stmt_children = $conn->prepare("SELECT id, nama, foto_profil, jenis_abk FROM profil_abk WHERE user_id = ? AND is_public = 1");
+$stmt_children->bind_param('i', $target_id);
+$stmt_children->execute();
+$children = $stmt_children->get_result()->fetch_all(MYSQLI_ASSOC);
+
 if (!$profil) {
     setFlash('error', 'Profil tidak ditemukan.');
     redirect('komunitas.php');
@@ -119,10 +125,18 @@ $usr = $is_logged_in ? getUserLogin($conn) : null;
         .btn-edit { background: #F1F5F9; color: var(--gelap); border: 1px solid var(--abu-muda); }
         .btn-edit:hover { background: #E2E8F0; }
 
-        /* KONTEN BAWAH (TABS & GRID) */
-        .content-layout { max-width: 1000px; margin: 30px auto; padding: 0 20px; width: 100%; display: grid; grid-template-columns: 1fr; gap: 24px; flex: 1;}
+        /* KONTEN BAWAH (TABS & SIDEBAR) */
+        .content-layout { max-width: 1100px; margin: 30px auto; padding: 0 20px; width: 100%; display: flex; gap: 30px; align-items: flex-start; flex: 1; }
+        .main-feed { flex: 1; min-width: 0; }
+        .side-info { flex: 0 0 280px; position: sticky; top: 90px; }
         
-        .tab-container { display: flex; gap: 16px; border-bottom: 2px solid var(--abu-muda); margin-bottom: 20px; }
+        @media (max-width: 950px) {
+            .content-layout { flex-direction: column; }
+            .side-info { width: 100%; position: static; order: 2; }
+            .main-feed { width: 100%; order: 1; }
+        }
+
+        .tab-container { display: flex; gap: 16px; border-bottom: 2px solid var(--abu-muda); margin-bottom: 24px; }
         .tab-btn { background: none; border: none; padding: 12px 24px; font-family: 'Nunito'; font-size: 18px; font-weight: 800; color: var(--abu); cursor: pointer; border-bottom: 4px solid transparent; margin-bottom: -2px; transition: 0.2s;}
         .tab-btn:hover { color: var(--gelap); }
         .tab-btn.active { color: var(--biru); border-bottom-color: var(--biru); }
@@ -182,6 +196,14 @@ $usr = $is_logged_in ? getUserLogin($conn) : null;
         .komentar-name { font-size: 14px; font-weight: 800; margin-bottom: 4px; }
         .komentar-text { font-size: 15px; margin: 0; }
         .komentar-time { font-size: 12px; color: var(--abu); margin-top: 6px; display:block; font-weight:600; margin-left: 4px;}
+
+        /* CHILDREN CARD STYLES */
+        .child-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 12px; }
+        .child-card { background: white; border-radius: 16px; padding: 14px; border: 1px solid var(--abu-muda); text-decoration: none; display: flex; align-items: center; gap: 12px; transition: 0.2s; }
+        .child-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-color: var(--biru); }
+        .child-avatar { width: 48px; height: 48px; border-radius: 12px; object-fit: cover; background: #F1F5F9; display: flex; align-items: center; justify-content: center; font-size: 22px; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .child-info h4 { margin: 0; font-size: 15px; font-weight: 800; color: var(--gelap); }
+        .child-info p { margin: 1px 0 0 0; font-size: 11px; color: var(--abu); font-weight: 700; }
         .komentar-input-area { display: flex; gap: 12px; align-items: flex-end; }
         .komentar-textarea { flex: 1; border: 1px solid var(--abu-muda); border-radius: 20px; padding: 12px 16px; font-family: inherit; font-size: 15px; resize: none; outline: none; background: #F8FAFC; max-height:120px;}
         .btn-send-komentar { background: var(--biru); color: white; border: none; width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; font-size: 18px; flex-shrink:0;}
@@ -249,10 +271,66 @@ $usr = $is_logged_in ? getUserLogin($conn) : null;
 <!-- KONTEN UTAMA -->
 <div class="content-layout">
     
-    <div class="tab-container">
-        <button class="tab-btn active" onclick="switchTab('tab-postingan', this)">📝 Postingan</button>
-        <button class="tab-btn" onclick="switchTab('tab-papan', this)">📋 Koleksi Papan</button>
-    </div>
+    <!-- Bagian Kiri: Sidebar Info -->
+    <aside class="side-info">
+        <?php if (!empty($children)): ?>
+        <div class="profile-children-sidebar">
+            <h3 style="font-size:18px; font-weight:800; margin-bottom:16px; font-family:'Baloo 2', cursive; color:var(--gelap); display: flex; align-items: center; gap: 8px;">
+                <span>🧒</span> Didampingi (<?= count($children) ?>)
+            </h3>
+            <div class="child-grid">
+                <?php foreach($children as $c): 
+                    $avatar_map = [
+                        'ASD'           => '🧩',
+                        'ADHD'          => '⚡',
+                        'Tunagrahita'   => '🌟',
+                        'Down Syndrome' => '🌈',
+                        'Disleksia'     => '📖',
+                    ];
+                    $avatar_emoji = $avatar_map[$c['jenis_abk']] ?? '😊';
+                ?>
+                <a href="profil-anak.php?id=<?= $c['id'] ?>" class="child-card">
+                    <?php if (!empty($c['foto_profil'])): ?>
+                        <img src="uploads/profil/<?= htmlspecialchars($c['foto_profil']) ?>" class="child-avatar" alt="<?= htmlspecialchars($c['nama']) ?>">
+                    <?php else: ?>
+                        <div class="child-avatar"><?= $avatar_emoji ?></div>
+                    <?php endif; ?>
+                    <div class="child-info">
+                        <h4><?= htmlspecialchars($c['nama']) ?></h4>
+                        <p><?= htmlspecialchars($c['jenis_abk'] ?: 'Profil ABK') ?></p>
+                    </div>
+                </a>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+        
+        <div style="margin-top: 30px; padding: 22px; background: white; border-radius: 20px; border: 1px solid var(--abu-muda); box-shadow: var(--shadow);">
+            <h4 style="font-family:'Baloo 2'; font-size: 17px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+                <span>📅</span> Info Akun
+            </h4>
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 13px; color: var(--abu); font-weight: 700;">Bergabung</span>
+                    <span style="font-size: 13px; color: var(--gelap); font-weight: 800;"><?= date('M Y', strtotime($profil['created_at'])) ?></span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 13px; color: var(--abu); font-weight: 700;">Peran</span>
+                    <span style="font-size: 12px; background: #E0F2FE; color: #0284C7; padding: 2px 8px; border-radius: 8px; font-weight: 800; text-transform: uppercase;"><?= htmlspecialchars($profil['peran'] ?: 'Pendamping') ?></span>
+                </div>
+            </div>
+            <button onclick="salinLinkProfil(this)" style="width: 100%; padding: 12px; background: var(--gelap); color: white; border: none; border-radius: 12px; font-weight: 800; font-size: 14px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                🔗 Bagikan Profil
+            </button>
+        </div>
+    </aside>
+
+    <!-- Bagian Kanan: Feed Utama -->
+    <main class="main-feed">
+        <div class="tab-container">
+            <button class="tab-btn active" onclick="switchTab('tab-postingan', this)">📝 Postingan</button>
+            <button class="tab-btn" onclick="switchTab('tab-papan', this)">📋 Koleksi Papan</button>
+        </div>
 
     <!-- TAB POSTINGAN -->
     <div id="tab-postingan">
@@ -359,6 +437,7 @@ $usr = $is_logged_in ? getUserLogin($conn) : null;
         <?php endif; ?>
     </div>
 
+    </main>
 </div>
 
 <!-- MODAL KOMENTAR (Disalin minimalis dari komunitas) -->
@@ -526,6 +605,19 @@ function hapusPostingan(postId) {
         }
     })
     .catch(() => alert('Gagal menghapus postingan.'));
+}
+
+function salinLinkProfil(btn) {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+        const oldHtml = btn.innerHTML;
+        btn.innerHTML = '✅ Tersalin!';
+        btn.style.background = 'var(--biru)';
+        setTimeout(() => {
+            btn.innerHTML = oldHtml;
+            btn.style.background = 'var(--gelap)';
+        }, 2000);
+    });
 }
 </script>
 </body>

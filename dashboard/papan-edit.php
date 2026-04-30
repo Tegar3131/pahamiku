@@ -1267,6 +1267,13 @@ $grid_cols = explode('x', $papan['grid'])[0];
 ═══════════════════════════════════════ -->
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 <script>
+const CSRF_TOKEN = <?= json_encode(csrfToken()) ?>;
+
+function withCsrf(formData) {
+    formData.append('csrf_token', CSRF_TOKEN);
+    return formData;
+}
+
 // ─── STATE ────────────────────────────────────────
 let timeout      = null;
 let timeoutMobile = null;
@@ -1305,7 +1312,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const formData = new FormData();
             formData.append('aksi', 'update_urutan');
             formData.append('data', JSON.stringify(urutanData));
-            fetch('papan-aksi.php', { method: 'POST', body: formData })
+            fetch('papan-aksi.php', { method: 'POST', body: withCsrf(formData) })
                 .then(() => tampilToast('✅ Urutan tersimpan', 'sukses'));
         }
     });
@@ -1424,7 +1431,7 @@ function tambahKePapan(idSimbol, label) {
     formData.append('papan_id', <?= $papan_id ?>);
     formData.append('simbol_id', idSimbol);
     formData.append('label', label);
-    fetch('papan-aksi.php', { method: 'POST', body: formData })
+    fetch('papan-aksi.php', { method: 'POST', body: withCsrf(formData) })
         .then(() => {
             tampilToast('✅ Simbol ditambahkan!', 'sukses');
             setTimeout(() => location.reload(), 800);
@@ -1436,7 +1443,7 @@ function hapusSimbol(idRow) {
     const formData = new FormData();
     formData.append('aksi', 'hapus_simbol');
     formData.append('id', idRow);
-    fetch('papan-aksi.php', { method: 'POST', body: formData })
+    fetch('papan-aksi.php', { method: 'POST', body: withCsrf(formData) })
         .then(() => {
             tampilToast('🗑️ Simbol dihapus', '');
             setTimeout(() => location.reload(), 600);
@@ -1499,10 +1506,10 @@ function simpanSimbolKustom() {
         }
     }
 
-    fetch('papan-aksi.php', { method: 'POST', body: formData })
-        .then(res => res.text())
+    fetch('papan-aksi.php', { method: 'POST', body: withCsrf(formData) })
+        .then(res => res.json())
         .then(res => {
-            if (res.trim() === 'sukses') {
+            if (res.status === 'sukses') {
                 tutupModalKustom();
                 tampilToast('✅ Simbol kustom disimpan!', 'sukses');
                 setTimeout(() => location.reload(), 800);
@@ -1543,10 +1550,10 @@ function simpanSettingsPapan() {
     fd.append('access_type', akses);
     fd.append('deskripsi', deskripsi);
 
-    fetch('papan-aksi.php', { method: 'POST', body: fd })
-        .then(res => res.text())
+    fetch('papan-aksi.php', { method: 'POST', body: withCsrf(fd) })
+        .then(res => res.json())
         .then(res => {
-            if (res.trim() === 'sukses') {
+            if (res.status === 'sukses') {
                 tampilToast('✅ Pengaturan berhasil diperbarui!', 'sukses');
                 setTimeout(() => location.reload(), 800);
             } else {

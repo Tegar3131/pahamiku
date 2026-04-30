@@ -4,6 +4,22 @@ include '../inc/config.php';
 cekLoginPendamping();
 
 $aksi = $_POST['aksi'] ?? '';
+header('Content-Type: application/json; charset=utf-8');
+
+function jsonResponse($payload, $statusCode = 200) {
+    http_response_code($statusCode);
+    echo json_encode($payload);
+    exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    jsonResponse(['status' => 'gagal', 'pesan' => 'Method tidak diizinkan'], 405);
+}
+
+$csrfToken = $_POST['csrf_token'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+if (!validasiCsrf($csrfToken)) {
+    jsonResponse(['status' => 'gagal', 'pesan' => 'CSRF token tidak valid'], 403);
+}
 
 if ($aksi === 'toggle_like') {
     $papan_id = (int)$_POST['papan_id'];
@@ -37,13 +53,11 @@ if ($aksi === 'toggle_like') {
     $stmt_count->bind_result($total);
     $stmt_count->fetch();
 
-    header('Content-Type: application/json');
-    echo json_encode([
+    jsonResponse([
         'status' => 'sukses',
         'liked' => $liked,
         'total' => $total
     ]);
-    exit;
 }
 
 if ($aksi === 'tambah_simbol') {
@@ -51,36 +65,40 @@ if ($aksi === 'tambah_simbol') {
     $simbol_id = bersihkan($_POST['simbol_id']);
     $label     = bersihkan($_POST['label']);
 
-    // HANYA simpan ke tabel papan_simbol
-    // Kita tidak lagi melakukan INSERT ke master_simbol
+    $stmt_cek = $conn->prepare("SELECT p.id FROM papan p JOIN profil_abk pr ON p.profil_id = pr.id WHERE p.id = ? AND pr.user_id = ?");
+    $stmt_cek->bind_param('ii', $papan_id, $_SESSION['user_id']);
+    $stmt_cek->execute();
+    if ($stmt_cek->get_result()->num_rows === 0) {
+        jsonResponse(['status' => 'gagal', 'pesan' => 'Akses ditolak'], 403);
+    }
+
     $stmt = $conn->prepare("INSERT INTO papan_simbol (papan_id, simbol_id, label_custom) VALUES (?, ?, ?)");
     $stmt->bind_param('iss', $papan_id, $simbol_id, $label);
     
     if ($stmt->execute()) {
-        echo 'sukses';
+        jsonResponse(['status' => 'sukses']);
     } else {
-        echo 'gagal';
+        jsonResponse(['status' => 'gagal', 'pesan' => 'Gagal menyimpan'], 500);
     }
 }
 
 if ($aksi === 'hapus_simbol') {
     $id = (int)$_POST['id'];
-    $stmt = $conn->prepare("DELETE FROM papan_simbol WHERE id = ?");
-    $stmt->bind_param('i', $id);
+    $stmt = $conn->prepare("DELETE ps FROM papan_simbol ps JOIN papan p ON ps.papan_id = p.id JOIN profil_abk pr ON p.profil_id = pr.id WHERE ps.id = ? AND pr.user_id = ?");
+    $stmt->bind_param('ii', $id, $_SESSION['user_id']);
     $stmt->execute();
-    echo 'sukses';
+    jsonResponse(['status' => 'sukses']);
 }
 
 // FITUR 1: SIMPAN URUTAN DRAG & DROP
 if ($aksi === 'update_urutan') {
     $data = json_decode($_POST['data'], true);
     foreach ($data as $item) {
-        $stmt = $conn->prepare("UPDATE papan_simbol SET urutan = ? WHERE id = ?");
-        $stmt->bind_param('ii', $item['urutan'], $item['id']);
+        $stmt = $conn->prepare("UPDATE papan_simbol ps JOIN papan p ON ps.papan_id = p.id JOIN profil_abk pr ON p.profil_id = pr.id SET ps.urutan = ? WHERE ps.id = ? AND pr.user_id = ?");
+        $stmt->bind_param('iii', $item['urutan'], $item['id'], $_SESSION['user_id']);
         $stmt->execute();
     }
-    echo 'sukses';
-    exit;
+    jsonResponse(['status' => 'sukses']);
 }
 
 // FITUR 3: UPDATE PENGATURAN PAPAN (Nama, Grid, Akses)
@@ -97,11 +115,10 @@ if ($aksi === 'update_papan_settings') {
     
     
     if ($stmt->execute()) {
-        echo 'sukses';
+        jsonResponse(['status' => 'sukses']);
     } else {
-        echo 'gagal';
+        jsonResponse(['status' => 'gagal', 'pesan' => 'Gagal menyimpan pengaturan'], 500);
     }
-    exit;
 }
 
 // FITUR 2: UPLOAD FOTO DARI KAMERA/GALERI
@@ -110,8 +127,26 @@ if ($aksi === 'upload_kamera') {
     $label = bersihkan($_POST['label']);
 
     if(isset($_FILES['foto'])) {
-        $ext = pathinfo($_FILES['foto']['name'], PATHINFO_EXTENSION);
-        $filename = 'upload-' . time() . '.' . $ext; // Penamaan unik
+        $stmt_cek = $conn->prepare("SELECT p.id FROM papan p JOIN profil_abk pr ON p.profil_id = pr.id WHERE p.id = ? AND pr.user_id = ?");
+        $stmt_cek->bind_param('ii', $papan_id, $_SESSION['user_id']);
+        $stmt_cek->execute();
+        if ($stmt_cek->get_result()->num_rows === 0) {
+            jsonResponse(['status' => 'gagal', 'pesan' => 'Akses ditolak'], 403);
+        }
+
+        if (empty($_FILES['foto']['tmp_name']) || $_FILES['foto']['size'] > MAX_UPLOAD_SIZE) {
+            jsonResponse(['status' => 'gagal', 'pesan' => 'Ukuran file tidak valid'], 400);
+        }
+
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mime = $finfo->file($_FILES['foto']['tmp_name']);
+        $allowedMimes = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
+        if (!isset($allowedMimes[$mime])) {
+            jsonResponse(['status' => 'gagal', 'pesan' => 'Format file tidak didukung'], 400);
+        }
+
+        $ext = $allowedMimes[$mime];
+        $filename = 'upload-' . bin2hex(random_bytes(16)) . '.' . $ext;
         $target = '../uploads/' . $filename;
         
         $upload_dir = '../uploads/';
@@ -124,12 +159,12 @@ if ($aksi === 'upload_kamera') {
             $stmt = $conn->prepare("INSERT INTO papan_simbol (papan_id, simbol_id, label_custom) VALUES (?, ?, ?)");
             $stmt->bind_param('iss', $papan_id, $filename, $label);
             $stmt->execute();
-            echo 'sukses';
+            jsonResponse(['status' => 'sukses']);
         } else {
-            echo 'gagal_upload';
+            jsonResponse(['status' => 'gagal', 'pesan' => 'Gagal mengunggah file'], 500);
         }
     }
-    exit;
+    jsonResponse(['status' => 'gagal', 'pesan' => 'File foto tidak ditemukan'], 400);
 }
 
 // ── MANAJEMEN PAPAN ABK: Toggle Aktif/Nonaktif ──
@@ -148,13 +183,10 @@ if ($aksi === 'toggle_papan_aktif') {
         $stmt_upd->bind_param('ii', $baru, $papan_id);
         $stmt_upd->execute();
         
-        header('Content-Type: application/json');
-        echo json_encode(['status' => 'sukses', 'is_aktif' => (bool)$baru]);
+        jsonResponse(['status' => 'sukses', 'is_aktif' => (bool)$baru]);
     } else {
-        header('Content-Type: application/json');
-        echo json_encode(['status' => 'gagal', 'pesan' => 'Papan tidak ditemukan']);
+        jsonResponse(['status' => 'gagal', 'pesan' => 'Papan tidak ditemukan'], 404);
     }
-    exit;
 }
 
 // ── MANAJEMEN PAPAN ABK: Update Urutan Tampil ──
@@ -167,8 +199,7 @@ if ($aksi === 'update_urutan_papan') {
     $stmt_cek->bind_param('ii', $profil_id, $_SESSION['user_id']);
     $stmt_cek->execute();
     if ($stmt_cek->get_result()->num_rows === 0) {
-        echo json_encode(['status' => 'gagal']);
-        exit;
+        jsonResponse(['status' => 'gagal', 'pesan' => 'Profil tidak valid'], 403);
     }
     
     foreach ($data as $item) {
@@ -188,9 +219,7 @@ if ($aksi === 'update_urutan_papan') {
         $stmt->execute();
     }
     
-    header('Content-Type: application/json');
-    echo json_encode(['status' => 'sukses']);
-    exit;
+    jsonResponse(['status' => 'sukses']);
 }
 
 // ── MANAJEMEN PAPAN ABK: Toggle Preset untuk Anak ──
@@ -203,9 +232,7 @@ if ($aksi === 'toggle_preset_abk') {
     $stmt_cek->bind_param('ii', $profil_id, $_SESSION['user_id']);
     $stmt_cek->execute();
     if ($stmt_cek->get_result()->num_rows === 0) {
-        header('Content-Type: application/json');
-        echo json_encode(['status' => 'gagal']);
-        exit;
+        jsonResponse(['status' => 'gagal', 'pesan' => 'Profil tidak valid'], 403);
     }
     
     // Verifikasi bahwa papan_id adalah papan preset (profil_id IS NULL)
@@ -213,9 +240,7 @@ if ($aksi === 'toggle_preset_abk') {
     $stmt_papan->bind_param('i', $papan_id);
     $stmt_papan->execute();
     if ($stmt_papan->get_result()->num_rows === 0) {
-        header('Content-Type: application/json');
-        echo json_encode(['status' => 'gagal', 'pesan' => 'Bukan papan preset']);
-        exit;
+        jsonResponse(['status' => 'gagal', 'pesan' => 'Bukan papan preset'], 400);
     }
     
     // Cek apakah sudah ada entri
@@ -237,7 +262,7 @@ if ($aksi === 'toggle_preset_abk') {
         $stmt_ins->execute();
     }
     
-    header('Content-Type: application/json');
-    echo json_encode(['status' => 'sukses', 'is_aktif' => (bool)$baru]);
-    exit;
+    jsonResponse(['status' => 'sukses', 'is_aktif' => (bool)$baru]);
 }
+
+jsonResponse(['status' => 'gagal', 'pesan' => 'Aksi tidak dikenal'], 400);

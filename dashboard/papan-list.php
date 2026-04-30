@@ -302,6 +302,12 @@ $avatar = $avatar_map[$profil['jenis_abk']] ?? '😊';
 
 <script>
 const PROFIL_ID = <?= $profil_id ?>;
+const CSRF_TOKEN = <?= json_encode(csrfToken()) ?>;
+
+function withCsrf(formData) {
+    formData.append('csrf_token', CSRF_TOKEN);
+    return formData;
+}
 
 // Hitung ulang nomor urut secara global (milik dulu, lalu preset)
 function rekalkNomor() {
@@ -321,7 +327,7 @@ function togglePapanAktif(papanId, checkbox) {
     const formData = new FormData();
     formData.append('aksi', 'toggle_papan_aktif');
     formData.append('papan_id', papanId);
-    fetch('papan-aksi.php', { method: 'POST', body: formData })
+    fetch('papan-aksi.php', { method: 'POST', body: withCsrf(formData) })
         .then(r => r.json())
         .then(data => {
             if (data.status === 'sukses') {
@@ -341,7 +347,7 @@ function togglePreset(papanId, checkbox) {
     formData.append('aksi', 'toggle_preset_abk');
     formData.append('papan_id', papanId);
     formData.append('profil_id', PROFIL_ID);
-    fetch('papan-aksi.php', { method: 'POST', body: formData })
+    fetch('papan-aksi.php', { method: 'POST', body: withCsrf(formData) })
         .then(r => r.json())
         .then(data => {
             if (data.status === 'sukses') {
@@ -378,7 +384,7 @@ function simpanUrutan(dataUrutan) {
     formData.append('aksi', 'update_urutan_papan');
     formData.append('profil_id', PROFIL_ID);
     formData.append('data', JSON.stringify(dataUrutan));
-    fetch('papan-aksi.php', { method: 'POST', body: formData })
+    fetch('papan-aksi.php', { method: 'POST', body: withCsrf(formData) })
         .then(r => r.json())
         .then(data => { if (data.status !== 'sukses') alert('Gagal menyimpan urutan.'); })
         .catch(() => alert('Terjadi kesalahan saat sinkronisasi urutan.'));

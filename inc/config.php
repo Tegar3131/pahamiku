@@ -1,4 +1,8 @@
 <?php
+if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'] ?? '')) {
+    http_response_code(403);
+    exit('Forbidden');
+}
 // ============================================================
 //  inc/config.php
 //  File ini di-include di SEMUA halaman PHP
@@ -10,10 +14,34 @@
 // 1. KONEKSI DATABASE
 // ------------------------------------------------------------
 
-define('DB_HOST', 'localhost');
-define('DB_USER', 'root');        // ganti sesuai MySQL Anda
-define('DB_PASS', '');            // ganti sesuai MySQL Anda
-define('DB_NAME', 'pahamiku');
+// Load konfigurasi dari file (kompatibel shared hosting InfinityFree).
+// Prioritas:
+// 1) config.production.php (untuk hosting)
+// 2) config.local.php (untuk development lokal)
+$config = [];
+$localConfigPath = __DIR__ . '/config.local.php';
+$prodConfigPath  = __DIR__ . '/config.production.php';
+
+if (is_file($prodConfigPath)) {
+    $loaded = include $prodConfigPath;
+    if (is_array($loaded)) $config = $loaded;
+} elseif (is_file($localConfigPath)) {
+    $loaded = include $localConfigPath;
+    if (is_array($loaded)) $config = $loaded;
+}
+
+$requiredKeys = ['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASS', 'BASE_URL'];
+foreach ($requiredKeys as $key) {
+    if (!array_key_exists($key, $config) || trim((string)$config[$key]) === '') {
+        http_response_code(500);
+        exit('Konfigurasi aplikasi belum lengkap.');
+    }
+}
+
+define('DB_HOST', (string)$config['DB_HOST']);
+define('DB_USER', (string)$config['DB_USER']);
+define('DB_PASS', (string)$config['DB_PASS']);
+define('DB_NAME', (string)$config['DB_NAME']);
 
 
 $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
@@ -21,7 +49,8 @@ $conn->set_charset('utf8mb4');
 
 // Cek koneksi — tampilkan error jika gagal
 if ($conn->connect_error) {
-    die("Koneksi database gagal: " . $conn->connect_error);
+    http_response_code(500);
+    exit('Terjadi gangguan sistem. Silakan coba lagi nanti.');
 }
 
 
@@ -30,7 +59,7 @@ if ($conn->connect_error) {
 // ------------------------------------------------------------
 
 // Sesuaikan dengan nama folder proyekmu
-define('BASE_URL', 'http://localhost/pahamiku/');
+define('BASE_URL', rtrim((string)$config['BASE_URL'], '/') . '/');
 define('UPLOAD_DIR', __DIR__ . '/../uploads/');
 define('UPLOAD_URL', BASE_URL . 'uploads/');
 define('SYMBOL_URL', BASE_URL . 'img/symbols/');
@@ -45,6 +74,12 @@ define('MAX_UPLOAD_SIZE', 2 * 1024 * 1024);
 // ------------------------------------------------------------
 
 if (session_status() === PHP_SESSION_NONE) {
+    ini_set('session.use_strict_mode', '1');
+    ini_set('session.cookie_httponly', '1');
+    ini_set('session.cookie_samesite', 'Lax');
+    if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+        ini_set('session.cookie_secure', '1');
+    }
     session_start();
 }
 
@@ -244,6 +279,25 @@ function tampilFlash() {
     $kelas = $flash['tipe'] === 'sukses' ? 'alert-sukses' : 'alert-gagal';
     echo "<div class='alert {$kelas}'>{$flash['pesan']}</div>";
     unset($_SESSION['flash']);
+}
+
+/**
+ * Dapatkan / buat CSRF token.
+ */
+function csrfToken() {
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+/**
+ * Validasi CSRF token request POST.
+ */
+function validasiCsrf($token) {
+    return is_string($token)
+        && isset($_SESSION['csrf_token'])
+        && hash_equals($_SESSION['csrf_token'], $token);
 }
 
 /**

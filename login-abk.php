@@ -25,8 +25,23 @@ while ($row = $hasil->fetch_assoc()) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $profil_id = (int) ($_POST['profil_id'] ?? 0);
     $pin       = bersihkan($_POST['pin'] ?? '');
+    $ip        = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    $limitKey  = 'abk_rate_' . md5($ip . '|' . $profil_id);
+    $maxAttempt = 5;
+    $windowSec = 300;
 
-    if (!$profil_id || !$pin) {
+    if (!isset($_SESSION[$limitKey])) {
+        $_SESSION[$limitKey] = ['count' => 0, 'first' => time()];
+    }
+    $rate = $_SESSION[$limitKey];
+    if ((time() - $rate['first']) > $windowSec) {
+        $_SESSION[$limitKey] = ['count' => 0, 'first' => time()];
+        $rate = $_SESSION[$limitKey];
+    }
+    if ($rate['count'] >= $maxAttempt) {
+        $waitSec = max(1, $windowSec - (time() - $rate['first']));
+        $error = 'Terlalu banyak percobaan PIN. Coba lagi dalam ' . $waitSec . ' detik.';
+    } elseif (!$profil_id || !$pin) {
         $error = 'Pilih nama dan masukkan PIN.';
     } else {
         $stmt = $conn->prepare("SELECT id, nama, jenis_abk FROM profil_abk WHERE id = ? AND pin = ?");
@@ -35,11 +50,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $profil = $stmt->get_result()->fetch_assoc();
 
         if ($profil) {
+            unset($_SESSION[$limitKey]);
             $_SESSION['profil_id']   = $profil['id'];
             $_SESSION['profil_nama'] = $profil['nama'];
             $_SESSION['jenis_abk']   = $profil['jenis_abk'];
             redirect('papan/pilih.php');
         } else {
+            $_SESSION[$limitKey]['count']++;
             $error = 'PIN salah. Coba lagi ya! 😊';
         }
     }
